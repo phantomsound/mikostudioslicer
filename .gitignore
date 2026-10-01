@@ -1,0 +1,11 @@
+﻿__pycache__/
+*.py[cod]
+*.class
+.venv/
+venv/
+extracted_assets/
+output_assets/
+*.psd
+*.zip
+.DS_Store
+Thumbs.db
