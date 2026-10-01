@@ -4,16 +4,16 @@ import socket
 import os
 import sys
 import json
+import tempfile
 import webbrowser
 import urllib.request
 
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
-PORT_FILE = os.path.join(DIRECTORY, "server.port")
+PORT_FILE = os.path.join(tempfile.gettempdir(), "mikostudioslicer.port")
 START_PORT = 8088
 MAX_PORT = 8138
 
 def is_our_service(port):
-    """Check if an active service on this port is actually MikoStudioSlicer."""
     try:
         url = f"http://127.0.0.1:{port}/health"
         req = urllib.request.Request(url, headers={"User-Agent": "MikoProbe"})
@@ -32,7 +32,6 @@ def is_port_in_use(port):
             return True
 
 def get_target_port():
-    # 1. Check if an active MikoStudioSlicer server is already running
     if os.path.exists(PORT_FILE):
         try:
             with open(PORT_FILE, "r") as f:
@@ -42,7 +41,6 @@ def get_target_port():
         except Exception:
             pass
 
-    # 2. Find the first completely open port
     for p in range(START_PORT, MAX_PORT):
         if is_our_service(p):
             return p, True
@@ -65,21 +63,22 @@ class SlicerHandler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def log_message(self, format, *args):
-        pass  # Silent running
+        pass
 
 def main():
     os.chdir(DIRECTORY)
     port, already_running = get_target_port()
 
-    # If the user clicked the shortcut and the service is already running, open browser and exit
     if already_running:
         if "--launch" in sys.argv:
             webbrowser.open(f"http://localhost:{port}")
         sys.exit(0)
 
-    # Save port identifier
-    with open(PORT_FILE, "w") as f:
-        f.write(str(port))
+    try:
+        with open(PORT_FILE, "w") as f:
+            f.write(str(port))
+    except Exception:
+        pass
 
     if "--launch" in sys.argv:
         webbrowser.open(f"http://localhost:{port}")
