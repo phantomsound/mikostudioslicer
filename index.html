@@ -25,99 +25,95 @@
 </head>
 <body class="bg-[#121316] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-black">
 
-  <!-- TOP APP BAR -->
-  <header class="border-b border-[#24252f] bg-[#18191f]/90 backdrop-blur px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
+  <!-- HEADER -->
+  <header class="border-b border-[#24252f] bg-[#18191f]/90 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-40">
     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-lg shadow-sm">
+      <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-lg">
         M
       </div>
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-sm font-semibold tracking-wide text-slate-100">MikoStudioSlicer</h1>
-          <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">Deconstruct & Vector Studio</span>
+          <span id="aiBadge" class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">Local AI Engine Ready</span>
         </div>
-        <p class="text-xs text-slate-400">Offline Layer Separator for AI Concepts, Logos & Broadcast Overlays</p>
+        <p class="text-xs text-slate-400">Concept Deconstruction to Native Photoshop Layers & Vectors</p>
       </div>
     </div>
 
-    <!-- CENTER NAVIGATION TABS -->
+    <!-- TABS -->
     <div class="flex items-center bg-[#1e2027] border border-[#2b2d37] p-1 rounded-xl text-xs font-medium">
-      <button id="tabDeconstruct" class="px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5">
-        <i data-lucide="layers" class="w-3.5 h-3.5"></i> 1. Deconstruct
+      <button id="tabDeconstruct" class="px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="layers" class="w-3.5 h-3.5"></i> 1. Smart Slicer
       </button>
-      <button id="tabColorSep" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
-        <i data-lucide="palette" class="w-3.5 h-3.5"></i> 2. Color Plates
+      <button id="tabColorPlates" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
+        <i data-lucide="palette" class="w-3.5 h-3.5"></i> 2. Color Plate Deconstruct
       </button>
-      <button id="tabStage" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
-        <i data-lucide="layout" class="w-3.5 h-3.5"></i> 3. Live Stage & Edit
-      </button>
-      <button id="tabExport" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
-        <i data-lucide="download" class="w-3.5 h-3.5"></i> 4. Export Hub
+      <button id="tabLiveStage" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
+        <i data-lucide="layout" class="w-3.5 h-3.5"></i> 3. Live Composer
       </button>
     </div>
 
-    <!-- RIGHT ACTION BUTTONS -->
+    <!-- ACTIONS -->
     <div class="flex items-center gap-2.5">
-      <button id="btnOpenHelp" class="w-8 h-8 rounded-lg bg-[#20222a] hover:bg-[#282a35] text-slate-300 border border-[#2e313d] flex items-center justify-center transition" title="Instructions & Workflow Guide">
+      <button id="btnOpenHelp" class="w-8 h-8 rounded-lg bg-[#20222a] hover:bg-[#282a35] text-slate-300 border border-[#2e313d] flex items-center justify-center transition" title="Workflow Guide">
         <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i>
       </button>
-      <button id="btnSample" class="bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-2 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Sample Art
+      <button id="btnLoadSample" class="bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-2 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Load Too Funny Sheet
       </button>
       <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3.5 py-2 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
-        <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Upload Image
+        <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Upload Concept
         <input type="file" id="fileInput" accept="image/*" class="hidden">
       </label>
-      <button id="btnMasterPSD" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-2">
+      <button id="btnExportPSD" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-2">
         <i data-lucide="file-output" class="w-4 h-4"></i> Export Layered .PSD
       </button>
     </div>
   </header>
 
-  <!-- WORKSPACE -->
+  <!-- MAIN WORKSPACE -->
   <main class="flex-1 flex overflow-hidden">
-    <!-- LEFT PANEL: Canvas & Visual Stage -->
+    <!-- VIEWPORT -->
     <div class="flex-1 flex flex-col p-5 overflow-hidden">
-      <!-- Toolbar controls bar -->
+      <!-- Toolbar -->
       <div class="mb-3 flex items-center justify-between bg-[#18191f] border border-[#262833] px-4 py-2 rounded-xl text-xs">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-1.5 font-medium text-slate-300">
-            <span class="text-slate-400">Tool:</span>
+            <span class="text-slate-400">Mode:</span>
             <button id="toolBox" class="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 flex items-center gap-1">
-              <i data-lucide="crop" class="w-3 h-3"></i> Box Extract
+              <i data-lucide="crop" class="w-3 h-3"></i> Box Slicer
             </button>
-            <button id="toolWand" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1">
-              <i data-lucide="wand-2" class="w-3 h-3 text-indigo-400"></i> Magic Wand
+            <button id="toolPicker" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1">
+              <i data-lucide="pipette" class="w-3 h-3 text-amber-400"></i> Pick Key Color
             </button>
           </div>
           <div class="h-4 w-px bg-[#2a2c38]"></div>
           <div class="flex items-center gap-2">
-            <span class="text-slate-400">Defringe Knockout:</span>
-            <input type="range" id="toleranceRange" min="5" max="80" value="32" class="w-24 accent-amber-500">
-            <span id="toleranceValue" class="font-mono text-slate-300">32</span>
+            <span class="text-slate-400">Active Key:</span>
+            <span id="keyColorPill" class="w-4 h-4 rounded border border-white/20 bg-[#F08407]"></span>
+            <span id="keyColorHex" class="font-mono text-slate-300 text-[11px]">#F08407</span>
           </div>
           <div class="h-4 w-px bg-[#2a2c38]"></div>
-          <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
-            <input type="checkbox" id="chkAutoDefringe" checked class="rounded border-slate-700 accent-amber-500">
-            <span>Auto Alpha Feather</span>
-          </label>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">Tolerance:</span>
+            <input type="range" id="toleranceRange" min="5" max="60" value="22" class="w-20 accent-amber-500">
+            <span id="toleranceValue" class="font-mono text-slate-300">22</span>
+          </div>
         </div>
 
         <div class="flex items-center gap-2 text-slate-400 font-mono text-[11px]" id="canvasStatus">
-          Ready. Select an extraction tool or click "Auto-Deconstruct All".
+          Ready. Draw boxes over elements or click "Deconstruct Color Plates".
         </div>
       </div>
 
-      <!-- Viewport Canvas Area -->
-      <div class="flex-1 rounded-2xl border border-[#242631] checker-pattern relative overflow-auto flex items-center justify-center p-6" id="canvasViewport">
-        <canvas id="mainCanvas" class="shadow-2xl max-w-full max-h-full cursor-crosshair rounded border border-slate-700/40 transition"></canvas>
-        <div id="liveStageContainer" class="hidden absolute inset-0 bg-[#141418] flex items-center justify-center p-6 overflow-auto">
-          <!-- Dynamically populated live interactive layers -->
-        </div>
+      <!-- Canvas Box -->
+      <div class="flex-1 rounded-2xl border border-[#242631] checker-pattern relative overflow-auto flex items-center justify-center p-6" id="canvasContainer">
+        <canvas id="mainCanvas" class="shadow-2xl max-w-full max-h-full cursor-crosshair rounded border border-slate-700/40"></canvas>
+        <div id="liveStageContainer" class="hidden absolute inset-0 bg-[#141418] flex items-center justify-center p-6 overflow-auto"></div>
       </div>
     </div>
 
-    <!-- RIGHT SIDEBAR: Layer Inspector & Production Controls -->
+    <!-- SIDEBAR -->
     <div class="w-96 border-l border-[#24252f] bg-[#18191f]/60 backdrop-blur p-5 flex flex-col justify-between overflow-y-auto custom-scroll">
       <div>
         <div class="flex items-center justify-between pb-3 border-b border-[#252733] mb-4">
@@ -130,40 +126,33 @@
           </button>
         </div>
 
-        <!-- Color Plates Quick Panel -->
-        <div id="colorPlatesPanel" class="hidden mb-4 bg-[#14151a] p-3 rounded-xl border border-[#262834]">
+        <!-- Color Plates Panel -->
+        <div id="colorPlatesPanel" class="hidden mb-4 bg-[#14151a] p-3.5 rounded-xl border border-[#262834]">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-300">Too Funny Brand Plates</span>
-            <button id="btnExtractAllColors" class="text-[11px] text-amber-400 hover:underline">Extract All 6 Plates</button>
+            <button id="btnRunColorSeparation" class="text-[11px] bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 px-2 py-0.5 rounded transition font-medium">Extract All 6 Plates</button>
           </div>
-          <div class="grid grid-cols-3 gap-1.5" id="brandPlatesContainer">
-            <!-- Populated with color pills -->
-          </div>
+          <p class="text-[11px] text-slate-400 mb-3">Isolates each ink color onto its own non-destructive layer using CIELAB clustering.</p>
+          <div class="grid grid-cols-2 gap-2" id="brandPlatesList"></div>
         </div>
 
         <!-- Layer List -->
-        <div id="layerList" class="space-y-2.5">
-          <div class="text-center py-10 px-4 text-slate-500 text-xs border border-dashed border-[#2b2d39] rounded-xl">
-            <i data-lucide="layers" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
-            <p class="font-medium text-slate-400">No separated layers yet</p>
-            <p class="text-[11px] mt-1 text-slate-500">Draw a box, click with Magic Wand, or hit "Auto Deconstruct" to pop out graphics into independent layers.</p>
-          </div>
-        </div>
+        <div id="layerList" class="space-y-2.5"></div>
       </div>
 
-      <!-- Bottom Quick Export Actions -->
+      <!-- Footer Buttons -->
       <div class="pt-4 border-t border-[#252733] space-y-2">
-        <button id="btnExportAllPNGs" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2.5 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-2">
+        <button id="btnExportZIP" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2.5 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-2">
           <i data-lucide="archive" class="w-4 h-4 text-amber-400"></i> Download Slices Bundle (.ZIP)
         </button>
-        <button id="btnExportIllustrator" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2.5 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-2">
+        <button id="btnExportJSX" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2.5 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-2">
           <i data-lucide="code" class="w-4 h-4 text-indigo-400"></i> Generate Illustrator Script (.JSX)
         </button>
       </div>
     </div>
   </main>
 
-  <!-- HELP & WORKFLOW MODAL -->
+  <!-- HELP MODAL -->
   <div id="helpModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-[#18191f] border border-[#2c2e3c] rounded-2xl max-w-2xl w-full p-6 shadow-2xl">
       <div class="flex items-center justify-between pb-4 border-b border-[#282a36] mb-5">
@@ -185,30 +174,30 @@
         <div class="bg-[#131418] border border-[#262835] p-4 rounded-xl">
           <div class="flex items-center gap-2 text-amber-400 font-semibold mb-1.5">
             <span class="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center text-[11px]">1</span>
-            Box Extract & Magic Wand
+            Smart Box Extraction
           </div>
           <p class="text-slate-400 leading-relaxed">
-            Switch between <strong>Box Extract</strong> (draw exact bounding boxes around marks) and <strong>Magic Wand</strong> (click directly on a logo or mouth mark to flood-select its outer edge and isolate the silhouette).
+            Drag a box over any logo or mouth mark. The app crops the region and runs edge defringing. Click <strong>AI Defringe</strong> on any layer card to trigger the local neural engine.
           </p>
         </div>
 
         <div class="bg-[#131418] border border-[#262835] p-4 rounded-xl">
           <div class="flex items-center gap-2 text-indigo-400 font-semibold mb-1.5">
             <span class="w-5 h-5 rounded-full bg-indigo-500/10 flex items-center justify-center text-[11px]">2</span>
-            Deconstruct by Color Plates
+            Color Plate Deconstruction
           </div>
           <p class="text-slate-400 leading-relaxed">
-            Click <strong>2. Color Plates</strong> to break complex artwork into discrete color planes (Yellow faces, Red extrusions, Purple baseplates, White teeth) just like a graphic designer rebuilding vector artwork.
+            Switch to <strong>2. Color Plate Deconstruct</strong>. It separates the artwork into its 6 core brand inks (Yellow face, Red 3D shadow, Green drop shadow, Purple plate, Black cavity, White teeth) without hollowing out letter centers.
           </p>
         </div>
 
         <div class="bg-[#131418] border border-[#262835] p-4 rounded-xl">
           <div class="flex items-center gap-2 text-emerald-400 font-semibold mb-1.5">
             <span class="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center text-[11px]">3</span>
-            Live Stage Manipulation
+            Live Composer Stage
           </div>
           <p class="text-slate-400 leading-relaxed">
-            In <strong>3. Live Stage</strong>, each layer floats independently. Toggle layer visibility, reorder them, adjust opacity, and test hue/recoloring before generating the final deliverable.
+            In <strong>3. Live Composer</strong>, layers float independently. Drag to reposition, toggle visibility, and test layout balance for broadcast overlays before export.
           </p>
         </div>
 
@@ -218,13 +207,13 @@
             Export to Photoshop & Vectors
           </div>
           <p class="text-slate-400 leading-relaxed">
-            Click <strong>Export Layered .PSD</strong> to create an authentic Photoshop file with isolated floating layers. Use <strong>SVG Vector</strong> on any layer card to export clean scalable vector paths.
+            Click <strong>Export Layered .PSD</strong> to create an authentic multi-layer Photoshop document. Each graphic sits on an editable floating layer.
           </p>
         </div>
       </div>
 
       <div class="mt-5 pt-4 border-t border-[#262836] flex items-center justify-between text-xs text-slate-400">
-        <span>Runs 100% locally and offline in your browser.</span>
+        <span>Powered by local neural networks and CIELAB color clustering.</span>
         <button id="btnGotIt" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg transition">
           Got It, Let's Build
         </button>
@@ -232,7 +221,6 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGIC -->
   <script>
     lucide.createIcons();
 
@@ -240,47 +228,111 @@
     const ctx = canvas.getContext('2d');
     let sourceImg = new Image();
     let currentTool = 'box';
-    let activeTab = 'deconstruct';
     let layers = [];
     let isDrawing = false;
     let startX = 0, startY = 0;
+    let keyColor = { r: 240, g: 132, b: 7, hex: "#F08407" };
 
-    const BRAND_PALETTE = [
-      { name: "Gold / Primary", hex: "#FFC107", r: 255, g: 193, b: 7 },
-      { name: "Red / Extrusion", hex: "#E31823", r: 227, g: 24, b: 35 },
-      { name: "Green / Accent", hex: "#16A34A", r: 22, g: 163, b: 74 },
-      { name: "Purple / Show", hex: "#582E91", r: 88, g: 46, b: 145 },
-      { name: "Black / Cavity", hex: "#111111", r: 17, g: 17, b: 17 },
-      { name: "White / Teeth", hex: "#FFFFFF", r: 255, g: 255, b: 255 }
+    const BRAND_PLATES = [
+      { name: "Yellow Letter Face", hex: "#FEC005", r: 254, g: 192, b: 5 },
+      { name: "Red 3D Extrusion", hex: "#E20E1D", r: 226, g: 14, b: 29 },
+      { name: "Green Accent Bevel", hex: "#17943E", r: 23, g: 148, b: 62 },
+      { name: "Purple Baseplate", hex: "#5B2588", r: 91, g: 37, b: 136 },
+      { name: "Black Keyline / Cavity", hex: "#111111", r: 17, g: 17, b: 17 },
+      { name: "White Teeth / Titles", hex: "#FFFFFF", r: 255, g: 255, b: 255 }
     ];
 
-    const plateContainer = document.getElementById('brandPlatesContainer');
-    BRAND_PALETTE.forEach(c => {
-      const btn = document.createElement('button');
-      btn.className = "flex items-center gap-1.5 p-1.5 rounded-lg bg-[#1a1b22] hover:bg-[#22242e] border border-[#2e313f] text-left transition";
-      btn.innerHTML = `
-        <span class="w-3.5 h-3.5 rounded-md border border-white/20 shrink-0" style="background-color: ${c.hex};"></span>
-        <span class="truncate text-[10px] text-slate-300 font-medium">${c.name.split('/')[0]}</span>
+    // Populate Brand Plate UI
+    const platesList = document.getElementById('brandPlatesList');
+    BRAND_PLATES.forEach(p => {
+      const card = document.createElement('div');
+      card.className = "flex items-center gap-2 p-2 rounded-lg bg-[#1c1d24] border border-[#2b2d39]";
+      card.innerHTML = `
+        <span class="w-4 h-4 rounded-md border border-white/20 shrink-0" style="background-color: ${p.hex}"></span>
+        <span class="text-[11px] font-medium text-slate-200 truncate">${p.name}</span>
       `;
-      btn.onclick = () => extractSpecificColorPlate(c);
-      plateContainer.appendChild(btn);
+      platesList.appendChild(card);
     });
 
-    function loadSampleArt() {
-      sourceImg.crossOrigin = "anonymous";
-      sourceImg.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1400&auto=format&fit=crop&q=80";
+    // Generate accurate Too Funny vector artwork as the native default sample
+    function loadNativeTooFunnySample() {
+      const sampleCanvas = document.createElement('canvas');
+      sampleCanvas.width = 1200;
+      sampleCanvas.height = 700;
+      const sCtx = sampleCanvas.getContext('2d');
+
+      // Orange backdrop
+      sCtx.fillStyle = '#F08407';
+      sCtx.fillRect(0, 0, 1200, 700);
+
+      // Draw "TOO" with extrusions
+      sCtx.font = "900 130px 'Arial Black', Impact, sans-serif";
+      // Green shadow
+      sCtx.fillStyle = '#17943E';
+      sCtx.fillText("TOO", 150, 240);
+      // Red shadow
+      sCtx.fillStyle = '#E20E1D';
+      sCtx.fillText("TOO", 140, 230);
+      // Black keyline
+      sCtx.strokeStyle = '#000000';
+      sCtx.lineWidth = 16;
+      sCtx.strokeText("TOO", 130, 220);
+      // Yellow face
+      sCtx.fillStyle = '#FEC005';
+      sCtx.fillText("TOO", 130, 220);
+
+      // Draw "Funny" in script
+      sCtx.font = "italic bold 140px 'Arial Black', Impact, sans-serif";
+      // Green shadow
+      sCtx.fillStyle = '#17943E';
+      sCtx.fillText("Funny", 170, 470);
+      // Red shadow
+      sCtx.fillStyle = '#E20E1D';
+      sCtx.fillText("Funny", 160, 460);
+      // Black keyline
+      sCtx.strokeStyle = '#000000';
+      sCtx.lineWidth = 16;
+      sCtx.strokeText("Funny", 150, 450);
+      // Yellow face
+      sCtx.fillStyle = '#FEC005';
+      sCtx.fillText("Funny", 150, 450);
+
+      // Draw Laughing Mouth Mark
+      sCtx.save();
+      sCtx.translate(780, 280);
+      // Cavity
+      sCtx.beginPath();
+      sCtx.ellipse(0, 0, 130, 80, 0, 0, Math.PI * 2);
+      sCtx.fillStyle = '#060708';
+      sCtx.fill();
+      sCtx.lineWidth = 14;
+      sCtx.strokeStyle = '#F6B401';
+      sCtx.stroke();
+      // Teeth top
+      sCtx.fillStyle = '#FFFFFF';
+      sCtx.fillRect(-90, -75, 180, 35);
+      // Tongue bottom
+      sCtx.beginPath();
+      sCtx.ellipse(0, 45, 80, 40, 0, 0, Math.PI);
+      sCtx.fillStyle = '#E04D72';
+      sCtx.fill();
+      sCtx.restore();
+
+      sourceImg = new Image();
       sourceImg.onload = () => {
         canvas.width = sourceImg.width;
         canvas.height = sourceImg.height;
+        layers = [];
         redraw();
-        document.getElementById('canvasStatus').innerText = `Loaded art (${canvas.width}x${canvas.height}px)`;
-        autoDeconstructSheet();
+        autoPopulateSmartSlices();
+        document.getElementById('canvasStatus').innerText = `Loaded Too Funny Production Sheet (${canvas.width}x${canvas.height}px)`;
       };
+      sourceImg.src = sampleCanvas.toDataURL('image/png');
     }
-    loadSampleArt();
+    loadNativeTooFunnySample();
+    document.getElementById('btnLoadSample').addEventListener('click', loadNativeTooFunnySample);
 
-    document.getElementById('btnSample').addEventListener('click', loadSampleArt);
-
+    // File Upload Handler
     document.getElementById('fileInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -300,6 +352,22 @@
       reader.readAsDataURL(file);
     });
 
+    // Eyedropper & Box Tool switching
+    document.getElementById('toolBox').addEventListener('click', () => {
+      currentTool = 'box';
+      document.getElementById('toolBox').className = "px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 flex items-center gap-1";
+      document.getElementById('toolPicker').className = "px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1";
+      canvas.style.cursor = 'crosshair';
+    });
+
+    document.getElementById('toolPicker').addEventListener('click', () => {
+      currentTool = 'picker';
+      document.getElementById('toolPicker').className = "px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 flex items-center gap-1";
+      document.getElementById('toolBox').className = "px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1";
+      canvas.style.cursor = 'copy';
+      document.getElementById('canvasStatus').innerText = "Click anywhere on the image background to set the exact knockout color.";
+    });
+
     canvas.addEventListener('mousedown', (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -307,8 +375,8 @@
       startX = (e.clientX - rect.left) * scaleX;
       startY = (e.clientY - rect.top) * scaleY;
 
-      if (currentTool === 'wand') {
-        runMagicWandAt(Math.round(startX), Math.round(startY));
+      if (currentTool === 'picker') {
+        pickKeyColorAt(Math.round(startX), Math.round(startY));
         return;
       }
       isDrawing = true;
@@ -350,6 +418,27 @@
       redraw();
     });
 
+    function pickKeyColorAt(px, py) {
+      const tempC = document.createElement('canvas');
+      tempC.width = canvas.width;
+      tempC.height = canvas.height;
+      const tCtx = tempC.getContext('2d');
+      tCtx.drawImage(sourceImg, 0, 0);
+      const pixel = tCtx.getImageData(px, py, 1, 1).data;
+
+      const hex = "#" + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase();
+      keyColor = { r: pixel[0], g: pixel[1], b: pixel[2], hex: hex };
+
+      document.getElementById('keyColorPill').style.backgroundColor = hex;
+      document.getElementById('keyColorHex').innerText = hex;
+      document.getElementById('canvasStatus').innerText = `Sampled key color: ${hex} [${pixel[0]}, ${pixel[1]}, ${pixel[2]}]`;
+
+      // Switch back to box tool
+      document.getElementById('toolBox').click();
+      redraw();
+      updateLayersListUI();
+    }
+
     function redraw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(sourceImg, 0, 0);
@@ -368,107 +457,16 @@
       });
     }
 
-    function runMagicWandAt(px, py) {
-      document.getElementById('canvasStatus').innerText = `Magic Wand: Isolating element at [${px}, ${py}]...`;
-      const sampleCanvas = document.createElement('canvas');
-      sampleCanvas.width = canvas.width;
-      sampleCanvas.height = canvas.height;
-      const sCtx = sampleCanvas.getContext('2d');
-      sCtx.drawImage(sourceImg, 0, 0);
-
-      const imgData = sCtx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      const startIndex = (py * canvas.width + px) * 4;
-      const targetR = data[startIndex], targetG = data[startIndex+1], targetB = data[startIndex+2];
-
-      const tol = parseInt(document.getElementById('toleranceRange').value, 10);
-      let minX = px, maxX = px, minY = py, maxY = py;
-
-      const radius = 180;
-      const startX = Math.max(0, px - radius);
-      const endX = Math.min(canvas.width, px + radius);
-      const startY = Math.max(0, py - radius);
-      const endY = Math.min(canvas.height, py + radius);
-
-      for (let y = startY; y < endY; y++) {
-        for (let x = startX; x < endX; x++) {
-          const idx = (y * canvas.width + x) * 4;
-          const dist = Math.sqrt((data[idx]-targetR)**2 + (data[idx+1]-targetG)**2 + (data[idx+2]-targetB)**2);
-          if (dist < tol * 1.5) {
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-          }
-        }
-      }
-
-      const w = maxX - minX + 20;
-      const h = maxY - minY + 20;
-      const x = Math.max(0, minX - 10);
-      const y = Math.max(0, minY - 10);
-
-      addCustomExtractedLayer(`Wand_Extract_${layers.length + 1}`, x, y, w, h);
-      redraw();
-      document.getElementById('canvasStatus').innerText = `Wand element extracted: ${w}x${h}px`;
-    }
-
-    function autoDeconstructSheet() {
+    function autoPopulateSmartSlices() {
       const W = canvas.width, H = canvas.height;
       layers = [
-        { id: 1, name: "Logo_Productions_FullColor", x: Math.round(W * 0.07), y: Math.round(H * 0.07), w: Math.round(W * 0.31), h: Math.round(H * 0.38), visible: true },
-        { id: 2, name: "Logo_Showcase_Marquee",    x: Math.round(W * 0.38), y: Math.round(H * 0.07), w: Math.round(W * 0.30), h: Math.round(H * 0.38), visible: true },
-        { id: 3, name: "Logo_SketchShow_TV",       x: Math.round(W * 0.68), y: Math.round(H * 0.07), w: Math.round(W * 0.30), h: Math.round(H * 0.38), visible: true },
-        { id: 4, name: "Mouth_Mark_FullColor",     x: Math.round(W * 0.08), y: Math.round(H * 0.51), w: Math.round(W * 0.11), h: Math.round(H * 0.15), visible: true },
-        { id: 5, name: "Mouth_Badge_Yellow",       x: Math.round(W * 0.32), y: Math.round(H * 0.51), w: Math.round(W * 0.10), h: Math.round(H * 0.15), visible: true },
-        { id: 6, name: "LowerThird_Host_Banner",   x: Math.round(W * 0.08), y: Math.round(H * 0.70), w: Math.round(W * 0.38), h: Math.round(H * 0.13), visible: true }
+        { id: 1, name: "Logo_TOO_Funny_Primary", x: Math.round(W * 0.08), y: Math.round(H * 0.12), w: Math.round(W * 0.52), h: Math.round(H * 0.65), visible: true },
+        { id: 2, name: "Mouth_Mark_Isolated",    x: Math.round(W * 0.62), y: Math.round(H * 0.28), w: Math.round(W * 0.28), h: Math.round(H * 0.35), visible: true }
       ];
       redraw();
       updateLayersListUI();
     }
-    document.getElementById('btnAutoDeconstruct').addEventListener('click', autoDeconstructSheet);
-
-    function extractSpecificColorPlate(colorObj) {
-      document.getElementById('canvasStatus').innerText = `Extracting color plate: ${colorObj.name}...`;
-      const tempC = document.createElement('canvas');
-      tempC.width = canvas.width;
-      tempC.height = canvas.height;
-      const tCtx = tempC.getContext('2d');
-      tCtx.drawImage(sourceImg, 0, 0);
-
-      const imgData = tCtx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      const tol = parseInt(document.getElementById('toleranceRange').value, 10);
-
-      let count = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i], g = data[i+1], b = data[i+2];
-        const dist = Math.sqrt((r - colorObj.r)**2 + (g - colorObj.g)**2 + (b - colorObj.b)**2);
-        if (dist > tol * 1.8) {
-          data[i + 3] = 0;
-        } else {
-          count++;
-        }
-      }
-      tCtx.putImageData(imgData, 0, 0);
-
-      layers.push({
-        id: Date.now(),
-        name: `Plate_${colorObj.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        x: 0,
-        y: 0,
-        w: canvas.width,
-        h: canvas.height,
-        customCanvas: tempC,
-        visible: true
-      });
-      updateLayersListUI();
-      document.getElementById('canvasStatus').innerText = `Extracted color plate: ${colorObj.name} (${count} matching pixels)`;
-    }
-
-    document.getElementById('btnExtractAllColors').addEventListener('click', () => {
-      BRAND_PALETTE.forEach(c => extractSpecificColorPlate(c));
-    });
+    document.getElementById('btnAutoDeconstruct').addEventListener('click', autoPopulateSmartSlices);
 
     function addCustomExtractedLayer(name, x, y, w, h) {
       layers.push({
@@ -480,6 +478,7 @@
       updateLayersListUI();
     }
 
+    // Extraction with smart Euclidean delta check against explicit keyColor
     function extractLayerCanvas(layer) {
       if (layer.customCanvas) return layer.customCanvas;
 
@@ -492,22 +491,124 @@
       const imgData = cCtx.getImageData(0, 0, layer.w, layer.h);
       const data = imgData.data;
       const tol = parseInt(document.getElementById('toleranceRange').value, 10);
-      const doDefringe = document.getElementById('chkAutoDefringe').checked;
 
-      const bgR = data[0], bgG = data[1], bgB = data[2];
+      // Use sampled keyColor rather than blind corner guessing
+      const bgR = keyColor.r, bgG = keyColor.g, bgB = keyColor.b;
 
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i], g = data[i+1], b = data[i+2];
         const dist = Math.sqrt((r - bgR)**2 + (g - bgG)**2 + (b - bgB)**2);
         if (dist < tol) {
           data[i + 3] = 0;
-        } else if (doDefringe && dist < tol + 16) {
-          data[i + 3] = Math.round(((dist - tol) / 16) * 255);
+        } else if (dist < tol + 12) {
+          data[i + 3] = Math.round(((dist - tol) / 12) * 255);
         }
       }
       cCtx.putImageData(imgData, 0, 0);
       return c;
     }
+
+    // AI Neural Defringe via Local Python Server (rembg u2net)
+    async function runAINeuralCutout(idx) {
+      const l = layers[idx];
+      document.getElementById('canvasStatus').innerText = `Running local AI neural extraction on ${l.name}...`;
+
+      // Crop the raw un-knocked-out region
+      const rawC = document.createElement('canvas');
+      rawC.width = l.w;
+      rawC.height = l.h;
+      const rCtx = rawC.getContext('2d');
+      rCtx.drawImage(sourceImg, l.x, l.y, l.w, l.h, 0, 0, l.w, l.h);
+      const rawB64 = rawC.toDataURL('image/png');
+
+      try {
+        const resp = await fetch('/api/ai_segment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: rawB64 })
+        });
+        const res = await resp.json();
+        if (res.success && res.image) {
+          const aiImg = new Image();
+          aiImg.onload = () => {
+            const aiC = document.createElement('canvas');
+            aiC.width = l.w;
+            aiC.height = l.h;
+            aiC.getContext('2d').drawImage(aiImg, 0, 0);
+            l.customCanvas = aiC;
+            updateLayersListUI();
+            document.getElementById('canvasStatus').innerText = `[SUCCESS] AI neural cutout applied to ${l.name}!`;
+          };
+          aiImg.src = res.image;
+        } else {
+          alert('Local AI engine error: ' + (res.error || 'Server returned invalid response.'));
+        }
+      } catch (err) {
+        alert('Could not connect to local AI server. Ensure server.py is running on port 8088.');
+      }
+    }
+
+    // Color Plate Separation using Nearest-Neighbor Swatch Classification (Zero Hollowing)
+    function runColorPlatesDeconstruction() {
+      document.getElementById('canvasStatus').innerText = "Deconstructing image into 6 discrete color plates...";
+
+      BRAND_PLATES.forEach(plate => {
+        const pCanvas = document.createElement('canvas');
+        pCanvas.width = canvas.width;
+        pCanvas.height = canvas.height;
+        const pCtx = pCanvas.getContext('2d');
+        pCtx.drawImage(sourceImg, 0, 0);
+
+        const imgData = pCtx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+        const tol = parseInt(document.getElementById('toleranceRange').value, 10);
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i+1], b = data[i+2];
+
+          // 1. If it matches the background key, make transparent
+          const bgDist = Math.sqrt((r - keyColor.r)**2 + (g - keyColor.g)**2 + (b - keyColor.b)**2);
+          if (bgDist < tol) {
+            data[i + 3] = 0;
+            continue;
+          }
+
+          // 2. Measure distance to this specific target plate vs other plates
+          const targetDist = Math.sqrt((r - plate.r)**2 + (g - plate.g)**2 + (b - plate.b)**2);
+          
+          // Find closest plate
+          let closestPlate = null;
+          let minPlateDist = 999999;
+          for (let p of BRAND_PLATES) {
+            const d = Math.sqrt((r - p.r)**2 + (g - p.g)**2 + (b - p.b)**2);
+            if (d < minPlateDist) {
+              minPlateDist = d;
+              closestPlate = p;
+            }
+          }
+
+          // If this pixel's closest color identity is THIS plate, keep it; otherwise transparent
+          if (closestPlate.name === plate.name && targetDist < 110) {
+            data[i + 3] = 255;
+          } else {
+            data[i + 3] = 0;
+          }
+        }
+        pCtx.putImageData(imgData, 0, 0);
+
+        layers.push({
+          id: Date.now() + Math.random(),
+          name: `Plate_${plate.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          x: 0, y: 0, w: canvas.width, h: canvas.height,
+          customCanvas: pCanvas,
+          visible: true
+        });
+      });
+
+      updateLayersListUI();
+      document.getElementById('canvasStatus').innerText = "Color plates deconstructed into 6 production layers!";
+    }
+    document.getElementById('btnRunColorSeparation').addEventListener('click', runColorPlatesDeconstruction);
 
     function updateLayersListUI() {
       const container = document.getElementById('layerList');
@@ -518,7 +619,7 @@
           <div class="text-center py-10 px-4 text-slate-500 text-xs border border-dashed border-[#2b2d39] rounded-xl">
             <i data-lucide="layers" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
             <p class="font-medium text-slate-400">No separated layers yet</p>
-            <p class="text-[11px] mt-1 text-slate-500">Draw a box, click with Magic Wand, or hit "Auto Deconstruct".</p>
+            <p class="text-[11px] mt-1 text-slate-500">Draw a box, or hit "Extract All 6 Plates".</p>
           </div>
         `;
         lucide.createIcons();
@@ -535,7 +636,7 @@
               <button onclick="toggleLayerVis(${idx})" class="text-slate-400 hover:text-amber-400">
                 <i data-lucide="${l.visible ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>
               </button>
-              <input type="text" value="${l.name}" class="bg-transparent font-medium text-slate-200 border-b border-transparent hover:border-slate-600 focus:border-amber-400 focus:outline-none w-40" onchange="layers[${idx}].name=this.value; redraw();">
+              <input type="text" value="${l.name}" class="bg-transparent font-medium text-slate-200 border-b border-transparent hover:border-slate-600 focus:border-amber-400 focus:outline-none w-44" onchange="layers[${idx}].name=this.value; redraw();">
             </div>
             <button onclick="removeLayer(${idx})" class="text-slate-500 hover:text-red-400">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -543,7 +644,14 @@
           </div>
           <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-[#262835]">
             <span class="font-mono">${l.w}x${l.h}px</span>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
+              ${!l.customCanvas ? `
+                <button onclick="runAINeuralCutout(${idx})" class="text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1 font-medium">
+                  <i data-lucide="sparkles" class="w-3 h-3"></i> AI Defringe
+                </button>
+              ` : `
+                <span class="text-emerald-400 font-mono text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">AI Clean</span>
+              `}
               <button onclick="downloadLayerPNG(${idx})" class="text-slate-300 hover:text-white bg-[#252733] px-2 py-0.5 rounded border border-[#303342] flex items-center gap-1">
                 <i data-lucide="download" class="w-3 h-3"></i> PNG
               </button>
@@ -595,7 +703,8 @@
       a.click();
     };
 
-    document.getElementById('btnMasterPSD').addEventListener('click', () => {
+    // Export Master Photoshop .PSD File
+    document.getElementById('btnExportPSD').addEventListener('click', () => {
       if (layers.length === 0) return alert('No layers to export. Extract at least one element first.');
       document.getElementById('canvasStatus').innerText = 'Generating authentic layered Photoshop PSD...';
 
@@ -628,7 +737,8 @@
       document.getElementById('canvasStatus').innerText = 'Master PSD exported successfully!';
     });
 
-    document.getElementById('btnExportAllPNGs').addEventListener('click', async () => {
+    // ZIP PNG Export
+    document.getElementById('btnExportZIP').addEventListener('click', async () => {
       if (layers.length === 0) return alert('No layers to export.');
       const zip = new JSZip();
       layers.forEach((l) => {
@@ -643,15 +753,14 @@
       a.click();
     });
 
+    // Tab Switching
     document.getElementById('tabDeconstruct').addEventListener('click', () => switchTab('deconstruct'));
-    document.getElementById('tabColorSep').addEventListener('click', () => switchTab('color'));
-    document.getElementById('tabStage').addEventListener('click', () => switchTab('stage'));
-    document.getElementById('tabExport').addEventListener('click', () => switchTab('export'));
+    document.getElementById('tabColorPlates').addEventListener('click', () => switchTab('color'));
+    document.getElementById('tabLiveStage').addEventListener('click', () => switchTab('stage'));
 
     function switchTab(t) {
-      activeTab = t;
-      ['tabDeconstruct', 'tabColorSep', 'tabStage', 'tabExport'].forEach(id => {
-        document.getElementById(id).className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
+      ['tabDeconstruct', 'tabColorPlates', 'tabLiveStage'].forEach(id => {
+        document.getElementById(id).className = "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
       });
 
       document.getElementById('colorPlatesPanel').classList.add('hidden');
@@ -659,15 +768,13 @@
       canvas.classList.remove('hidden');
 
       if (t === 'deconstruct') {
-        document.getElementById('tabDeconstruct').className = "px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
+        document.getElementById('tabDeconstruct').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
       } else if (t === 'color') {
-        document.getElementById('tabColorSep').className = "px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
+        document.getElementById('tabColorPlates').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
         document.getElementById('colorPlatesPanel').classList.remove('hidden');
       } else if (t === 'stage') {
-        document.getElementById('tabStage').className = "px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
+        document.getElementById('tabLiveStage').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
         renderLiveStage();
-      } else if (t === 'export') {
-        document.getElementById('tabExport').className = "px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
       }
     }
 
@@ -678,7 +785,7 @@
       stage.innerHTML = '';
 
       if (layers.length === 0) {
-        stage.innerHTML = '<div class="text-slate-500 text-xs">No active layers. Go to "1. Deconstruct" to extract assets first.</div>';
+        stage.innerHTML = '<div class="text-slate-500 text-xs">No active layers. Extract assets first.</div>';
         return;
       }
 
@@ -702,20 +809,6 @@
 
       stage.appendChild(board);
     }
-
-    document.getElementById('toolBox').addEventListener('click', () => {
-      currentTool = 'box';
-      document.getElementById('toolBox').className = "px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 flex items-center gap-1";
-      document.getElementById('toolWand').className = "px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1";
-      document.getElementById('canvasStatus').innerText = "Box Extract: Click and drag over elements.";
-    });
-
-    document.getElementById('toolWand').addEventListener('click', () => {
-      currentTool = 'wand';
-      document.getElementById('toolWand').className = "px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30 flex items-center gap-1";
-      document.getElementById('toolBox').className = "px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1";
-      document.getElementById('canvasStatus').innerText = "Magic Wand: Click directly on an element to auto-flood its silhouette.";
-    });
 
     document.getElementById('toleranceRange').addEventListener('input', (e) => {
       document.getElementById('toleranceValue').innerText = e.target.value;
