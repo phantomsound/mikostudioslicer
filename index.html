@@ -59,7 +59,7 @@
         <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i>
       </button>
       <button id="btnLoadSample" class="bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-2 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Load Too Funny Sheet
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Load Miko Concept
       </button>
       <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3.5 py-2 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
         <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Upload Concept
@@ -90,8 +90,8 @@
           <div class="h-4 w-px bg-[#2a2c38]"></div>
           <div class="flex items-center gap-2">
             <span class="text-slate-400">Active Key:</span>
-            <span id="keyColorPill" class="w-4 h-4 rounded border border-white/20 bg-[#F08407]"></span>
-            <span id="keyColorHex" class="font-mono text-slate-300 text-[11px]">#F08407</span>
+            <span id="keyColorPill" class="w-4 h-4 rounded border border-white/20 bg-[#1A1D26]"></span>
+            <span id="keyColorHex" class="font-mono text-slate-300 text-[11px]">#1A1D26</span>
           </div>
           <div class="h-4 w-px bg-[#2a2c38]"></div>
           <div class="flex items-center gap-2">
@@ -129,10 +129,10 @@
         <!-- Color Plates Panel -->
         <div id="colorPlatesPanel" class="hidden mb-4 bg-[#14151a] p-3.5 rounded-xl border border-[#262834]">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-slate-300">Too Funny Brand Plates</span>
+            <span class="text-xs font-semibold text-slate-300">Miko Studio Brand Plates</span>
             <button id="btnRunColorSeparation" class="text-[11px] bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 px-2 py-0.5 rounded transition font-medium">Extract All 6 Plates</button>
           </div>
-          <p class="text-[11px] text-slate-400 mb-3">Isolates each ink color onto its own non-destructive layer using CIELAB clustering.</p>
+          <p class="text-[11px] text-slate-400 mb-3">Isolates each ink color onto its own non-destructive layer without hollowing text.</p>
           <div class="grid grid-cols-2 gap-2" id="brandPlatesList"></div>
         </div>
 
@@ -177,7 +177,7 @@
             Smart Box Extraction
           </div>
           <p class="text-slate-400 leading-relaxed">
-            Drag a box over any logo or mouth mark. The app crops the region and runs edge defringing. Click <strong>AI Defringe</strong> on any layer card to trigger the local neural engine.
+            Drag a box over any logo, badge, or banner. The app crops the region and defringes edges. Click <strong>AI Defringe</strong> on any layer card to trigger the local neural engine.
           </p>
         </div>
 
@@ -187,7 +187,7 @@
             Color Plate Deconstruction
           </div>
           <p class="text-slate-400 leading-relaxed">
-            Switch to <strong>2. Color Plate Deconstruct</strong>. It separates the artwork into its 6 core brand inks (Yellow face, Red 3D shadow, Green drop shadow, Purple plate, Black cavity, White teeth) without hollowing out letter centers.
+            Switch to <strong>2. Color Plate Deconstruct</strong>. It separates the artwork into its 6 core brand inks (Gold, Cyan, Violet, Crimson, Obsidian, White) without hollowing out letter centers.
           </p>
         </div>
 
@@ -231,18 +231,17 @@
     let layers = [];
     let isDrawing = false;
     let startX = 0, startY = 0;
-    let keyColor = { r: 240, g: 132, b: 7, hex: "#F08407" };
+    let keyColor = { r: 26, g: 29, b: 38, hex: "#1A1D26" };
 
     const BRAND_PLATES = [
-      { name: "Yellow Letter Face", hex: "#FEC005", r: 254, g: 192, b: 5 },
-      { name: "Red 3D Extrusion", hex: "#E20E1D", r: 226, g: 14, b: 29 },
-      { name: "Green Accent Bevel", hex: "#17943E", r: 23, g: 148, b: 62 },
-      { name: "Purple Baseplate", hex: "#5B2588", r: 91, g: 37, b: 136 },
-      { name: "Black Keyline / Cavity", hex: "#111111", r: 17, g: 17, b: 17 },
-      { name: "White Teeth / Titles", hex: "#FFFFFF", r: 255, g: 255, b: 255 }
+      { name: "Studio Gold Face", hex: "#F59E0B", r: 245, g: 158, b: 11 },
+      { name: "Electric Cyan Glow", hex: "#06B6D4", r: 6, g: 182, b: 212 },
+      { name: "Deep Violet Shadow", hex: "#6366F1", r: 99, g: 102, b: 241 },
+      { name: "Crimson Bevel", hex: "#EF4444", r: 239, g: 68, b: 68 },
+      { name: "Obsidian Core Base", hex: "#0F172A", r: 15, g: 23, b: 42 },
+      { name: "Paper White Titles", hex: "#F8FAFC", r: 248, g: 250, b: 252 }
     ];
 
-    // Populate Brand Plate UI
     const platesList = document.getElementById('brandPlatesList');
     BRAND_PLATES.forEach(p => {
       const card = document.createElement('div');
@@ -254,69 +253,153 @@
       platesList.appendChild(card);
     });
 
-    // Generate accurate Too Funny vector artwork as the native default sample
-    function loadNativeTooFunnySample() {
+    // Native Miko Studio Slicer Concept Sheet Generator
+    function loadMikoStudioConcept() {
       const sampleCanvas = document.createElement('canvas');
-      sampleCanvas.width = 1200;
-      sampleCanvas.height = 700;
+      sampleCanvas.width = 1600;
+      sampleCanvas.height = 1000;
       const sCtx = sampleCanvas.getContext('2d');
 
-      // Orange backdrop
-      sCtx.fillStyle = '#F08407';
-      sCtx.fillRect(0, 0, 1200, 700);
+      // Studio slate background (#1A1D26)
+      sCtx.fillStyle = '#1A1D26';
+      sCtx.fillRect(0, 0, 1600, 1000);
 
-      // Draw "TOO" with extrusions
-      sCtx.font = "900 130px 'Arial Black', Impact, sans-serif";
-      // Green shadow
-      sCtx.fillStyle = '#17943E';
-      sCtx.fillText("TOO", 150, 240);
-      // Red shadow
-      sCtx.fillStyle = '#E20E1D';
-      sCtx.fillText("TOO", 140, 230);
-      // Black keyline
-      sCtx.strokeStyle = '#000000';
-      sCtx.lineWidth = 16;
-      sCtx.strokeText("TOO", 130, 220);
-      // Yellow face
-      sCtx.fillStyle = '#FEC005';
-      sCtx.fillText("TOO", 130, 220);
+      // Inner workcard
+      sCtx.fillStyle = '#13151D';
+      sCtx.strokeStyle = '#2B3040';
+      sCtx.lineWidth = 2;
+      sCtx.fillRect(40, 40, 1520, 920);
+      sCtx.strokeRect(40, 40, 1520, 920);
 
-      // Draw "Funny" in script
-      sCtx.font = "italic bold 140px 'Arial Black', Impact, sans-serif";
-      // Green shadow
-      sCtx.fillStyle = '#17943E';
-      sCtx.fillText("Funny", 170, 470);
-      // Red shadow
-      sCtx.fillStyle = '#E20E1D';
-      sCtx.fillText("Funny", 160, 460);
-      // Black keyline
-      sCtx.strokeStyle = '#000000';
-      sCtx.lineWidth = 16;
-      sCtx.strokeText("Funny", 150, 450);
-      // Yellow face
-      sCtx.fillStyle = '#FEC005';
-      sCtx.fillText("Funny", 150, 450);
+      // Header title
+      sCtx.fillStyle = '#94A3B8';
+      sCtx.font = "bold 20px 'Segoe UI', system-ui, sans-serif";
+      sCtx.fillText("MIKO STUDIO SLICER // MODULAR ASSET DECONSTRUCTION KIT", 70, 80);
 
-      // Draw Laughing Mouth Mark
-      sCtx.save();
-      sCtx.translate(780, 280);
-      // Cavity
+      // Divider line
+      sCtx.strokeStyle = '#2B3040';
       sCtx.beginPath();
-      sCtx.ellipse(0, 0, 130, 80, 0, 0, Math.PI * 2);
-      sCtx.fillStyle = '#060708';
-      sCtx.fill();
-      sCtx.lineWidth = 14;
-      sCtx.strokeStyle = '#F6B401';
+      sCtx.moveTo(70, 105);
+      sCtx.lineTo(1530, 105);
       sCtx.stroke();
-      // Teeth top
-      sCtx.fillStyle = '#FFFFFF';
-      sCtx.fillRect(-90, -75, 180, 35);
-      // Tongue bottom
+
+      // 1. Main Logo Badge: "MIKO" + "STUDIO SLICER"
+      sCtx.font = "900 125px 'Segoe UI', Impact, Arial Black, sans-serif";
+      // Crimson Bevel
+      sCtx.fillStyle = '#EF4444';
+      sCtx.fillText("MIKO", 92, 242);
+      // Violet Shadow
+      sCtx.fillStyle = '#6366F1';
+      sCtx.fillText("MIKO", 86, 236);
+      // Cyan Glow
+      sCtx.fillStyle = '#06B6D4';
+      sCtx.fillText("MIKO", 80, 230);
+      // Gold Primary Face
+      sCtx.fillStyle = '#F59E0B';
+      sCtx.fillText("MIKO", 74, 224);
+
+      sCtx.font = "800 52px 'Segoe UI', system-ui, sans-serif";
+      sCtx.fillStyle = '#F8FAFC';
+      sCtx.fillText("STUDIO SLICER", 78, 305);
+
+      sCtx.font = "500 16px 'Segoe UI', system-ui, sans-serif";
+      sCtx.fillStyle = '#64748B';
+      sCtx.fillText("MULTI-LAYER ASSET DECONSTRUCTION ENGINE", 80, 340);
+
+      // 2. Slice Emblem / Diamond Aperture
+      sCtx.save();
+      sCtx.translate(880, 260);
+
+      // Outer diamond
       sCtx.beginPath();
-      sCtx.ellipse(0, 45, 80, 40, 0, 0, Math.PI);
-      sCtx.fillStyle = '#E04D72';
+      sCtx.moveTo(0, -130);
+      sCtx.lineTo(130, 0);
+      sCtx.lineTo(0, 130);
+      sCtx.lineTo(-130, 0);
+      sCtx.closePath();
+      sCtx.fillStyle = '#0F172A';
       sCtx.fill();
+      sCtx.strokeStyle = '#F59E0B';
+      sCtx.lineWidth = 6;
+      sCtx.stroke();
+
+      // Mid diamond
+      sCtx.beginPath();
+      sCtx.moveTo(0, -90);
+      sCtx.lineTo(90, 0);
+      sCtx.lineTo(0, 90);
+      sCtx.lineTo(-90, 0);
+      sCtx.closePath();
+      sCtx.fillStyle = '#6366F1';
+      sCtx.fill();
+
+      // Inner diamond
+      sCtx.beginPath();
+      sCtx.moveTo(0, -50);
+      sCtx.lineTo(50, 0);
+      sCtx.lineTo(0, 50);
+      sCtx.lineTo(-50, 0);
+      sCtx.closePath();
+      sCtx.fillStyle = '#06B6D4';
+      sCtx.fill();
+
+      // Scalpel / Slice line across emblem
+      sCtx.strokeStyle = '#EF4444';
+      sCtx.lineWidth = 8;
+      sCtx.beginPath();
+      sCtx.moveTo(-150, -60);
+      sCtx.lineTo(150, 60);
+      sCtx.stroke();
       sCtx.restore();
+
+      // 3. Brand Swatches Column
+      const swatches = [
+        { name: "Studio Gold", hex: "#F59E0B" },
+        { name: "Electric Cyan", hex: "#06B6D4" },
+        { name: "Deep Violet", hex: "#6366F1" },
+        { name: "Crimson Bevel", hex: "#EF4444" },
+        { name: "Obsidian Core", hex: "#0F172A" },
+        { name: "Paper White", hex: "#F8FAFC" }
+      ];
+
+      swatches.forEach((sw, i) => {
+        const sy = 150 + i * 55;
+        sCtx.beginPath();
+        sCtx.arc(1200, sy + 20, 20, 0, Math.PI * 2);
+        sCtx.fillStyle = sw.hex;
+        sCtx.fill();
+        sCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+        sCtx.lineWidth = 2;
+        sCtx.stroke();
+
+        sCtx.font = "bold 15px 'Segoe UI', system-ui, sans-serif";
+        sCtx.fillStyle = '#F1F5F9';
+        sCtx.fillText(sw.name, 1240, sy + 18);
+
+        sCtx.font = "13px monospace";
+        sCtx.fillStyle = '#94A3B8';
+        sCtx.fillText(sw.hex, 1240, sy + 36);
+      });
+
+      // 4. Modular Broadcast Lower-Third Modular Banner
+      sCtx.fillStyle = '#0F172A';
+      sCtx.fillRect(70, 620, 970, 95);
+      sCtx.strokeStyle = '#6366F1';
+      sCtx.lineWidth = 2;
+      sCtx.strokeRect(70, 620, 970, 95);
+
+      sCtx.fillStyle = '#F59E0B';
+      sCtx.fillRect(70, 575, 440, 45);
+      sCtx.font = "900 16px 'Segoe UI', system-ui, sans-serif";
+      sCtx.fillStyle = '#0F172A';
+      sCtx.fillText("LEAD PRODUCTION ARCHITECT", 95, 604);
+
+      sCtx.font = "bold 38px 'Segoe UI', system-ui, sans-serif";
+      sCtx.fillStyle = '#F8FAFC';
+      sCtx.fillText("ALEX RIVERS", 95, 680);
+
+      sCtx.fillStyle = '#06B6D4';
+      sCtx.fillRect(70, 715, 970, 5);
 
       sourceImg = new Image();
       sourceImg.onload = () => {
@@ -324,13 +407,13 @@
         canvas.height = sourceImg.height;
         layers = [];
         redraw();
-        autoPopulateSmartSlices();
-        document.getElementById('canvasStatus').innerText = `Loaded Too Funny Production Sheet (${canvas.width}x${canvas.height}px)`;
+        autoPopulateMikoSlices();
+        document.getElementById('canvasStatus').innerText = `Loaded Miko Studio Slicer Kit (${canvas.width}x${canvas.height}px)`;
       };
       sourceImg.src = sampleCanvas.toDataURL('image/png');
     }
-    loadNativeTooFunnySample();
-    document.getElementById('btnLoadSample').addEventListener('click', loadNativeTooFunnySample);
+    loadMikoStudioConcept();
+    document.getElementById('btnLoadSample').addEventListener('click', loadMikoStudioConcept);
 
     // File Upload Handler
     document.getElementById('fileInput').addEventListener('change', (e) => {
@@ -352,7 +435,6 @@
       reader.readAsDataURL(file);
     });
 
-    // Eyedropper & Box Tool switching
     document.getElementById('toolBox').addEventListener('click', () => {
       currentTool = 'box';
       document.getElementById('toolBox').className = "px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 flex items-center gap-1";
@@ -365,7 +447,7 @@
       document.getElementById('toolPicker').className = "px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 flex items-center gap-1";
       document.getElementById('toolBox').className = "px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 border border-transparent hover:border-[#2e313d] flex items-center gap-1";
       canvas.style.cursor = 'copy';
-      document.getElementById('canvasStatus').innerText = "Click anywhere on the image background to set the exact knockout color.";
+      document.getElementById('canvasStatus').innerText = "Click anywhere on the image background to sample the exact knockout key.";
     });
 
     canvas.addEventListener('mousedown', (e) => {
@@ -433,7 +515,6 @@
       document.getElementById('keyColorHex').innerText = hex;
       document.getElementById('canvasStatus').innerText = `Sampled key color: ${hex} [${pixel[0]}, ${pixel[1]}, ${pixel[2]}]`;
 
-      // Switch back to box tool
       document.getElementById('toolBox').click();
       redraw();
       updateLayersListUI();
@@ -457,16 +538,18 @@
       });
     }
 
-    function autoPopulateSmartSlices() {
+    function autoPopulateMikoSlices() {
       const W = canvas.width, H = canvas.height;
       layers = [
-        { id: 1, name: "Logo_TOO_Funny_Primary", x: Math.round(W * 0.08), y: Math.round(H * 0.12), w: Math.round(W * 0.52), h: Math.round(H * 0.65), visible: true },
-        { id: 2, name: "Mouth_Mark_Isolated",    x: Math.round(W * 0.62), y: Math.round(H * 0.28), w: Math.round(W * 0.28), h: Math.round(H * 0.35), visible: true }
+        { id: 1, name: "Logo_MikoStudioSlicer",      x: Math.round(W * 0.04), y: Math.round(H * 0.13), w: Math.round(W * 0.40), h: Math.round(H * 0.25), visible: true },
+        { id: 2, name: "Emblem_Slice_Aperture",     x: Math.round(W * 0.47), y: Math.round(H * 0.12), w: Math.round(W * 0.22), h: Math.round(H * 0.32), visible: true },
+        { id: 3, name: "Palette_BrandSwatches",     x: Math.round(W * 0.72), y: Math.round(H * 0.13), w: Math.round(W * 0.22), h: Math.round(H * 0.40), visible: true },
+        { id: 4, name: "LowerThird_ModularBanner",  x: Math.round(W * 0.04), y: Math.round(H * 0.56), w: Math.round(W * 0.63), h: Math.round(H * 0.18), visible: true }
       ];
       redraw();
       updateLayersListUI();
     }
-    document.getElementById('btnAutoDeconstruct').addEventListener('click', autoPopulateSmartSlices);
+    document.getElementById('btnAutoDeconstruct').addEventListener('click', autoPopulateMikoSlices);
 
     function addCustomExtractedLayer(name, x, y, w, h) {
       layers.push({
@@ -478,7 +561,6 @@
       updateLayersListUI();
     }
 
-    // Extraction with smart Euclidean delta check against explicit keyColor
     function extractLayerCanvas(layer) {
       if (layer.customCanvas) return layer.customCanvas;
 
@@ -492,7 +574,6 @@
       const data = imgData.data;
       const tol = parseInt(document.getElementById('toleranceRange').value, 10);
 
-      // Use sampled keyColor rather than blind corner guessing
       const bgR = keyColor.r, bgG = keyColor.g, bgB = keyColor.b;
 
       for (let i = 0; i < data.length; i += 4) {
@@ -508,12 +589,10 @@
       return c;
     }
 
-    // AI Neural Defringe via Local Python Server (rembg u2net)
     async function runAINeuralCutout(idx) {
       const l = layers[idx];
       document.getElementById('canvasStatus').innerText = `Running local AI neural extraction on ${l.name}...`;
 
-      // Crop the raw un-knocked-out region
       const rawC = document.createElement('canvas');
       rawC.width = l.w;
       rawC.height = l.h;
@@ -548,7 +627,6 @@
       }
     }
 
-    // Color Plate Separation using Nearest-Neighbor Swatch Classification (Zero Hollowing)
     function runColorPlatesDeconstruction() {
       document.getElementById('canvasStatus').innerText = "Deconstructing image into 6 discrete color plates...";
 
@@ -566,17 +644,14 @@
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i], g = data[i+1], b = data[i+2];
 
-          // 1. If it matches the background key, make transparent
           const bgDist = Math.sqrt((r - keyColor.r)**2 + (g - keyColor.g)**2 + (b - keyColor.b)**2);
           if (bgDist < tol) {
             data[i + 3] = 0;
             continue;
           }
 
-          // 2. Measure distance to this specific target plate vs other plates
           const targetDist = Math.sqrt((r - plate.r)**2 + (g - plate.g)**2 + (b - plate.b)**2);
           
-          // Find closest plate
           let closestPlate = null;
           let minPlateDist = 999999;
           for (let p of BRAND_PLATES) {
@@ -587,8 +662,7 @@
             }
           }
 
-          // If this pixel's closest color identity is THIS plate, keep it; otherwise transparent
-          if (closestPlate.name === plate.name && targetDist < 110) {
+          if (closestPlate.name === plate.name && targetDist < 120) {
             data[i + 3] = 255;
           } else {
             data[i + 3] = 0;
@@ -703,7 +777,6 @@
       a.click();
     };
 
-    // Export Master Photoshop .PSD File
     document.getElementById('btnExportPSD').addEventListener('click', () => {
       if (layers.length === 0) return alert('No layers to export. Extract at least one element first.');
       document.getElementById('canvasStatus').innerText = 'Generating authentic layered Photoshop PSD...';
@@ -737,7 +810,6 @@
       document.getElementById('canvasStatus').innerText = 'Master PSD exported successfully!';
     });
 
-    // ZIP PNG Export
     document.getElementById('btnExportZIP').addEventListener('click', async () => {
       if (layers.length === 0) return alert('No layers to export.');
       const zip = new JSZip();
@@ -753,7 +825,6 @@
       a.click();
     });
 
-    // Tab Switching
     document.getElementById('tabDeconstruct').addEventListener('click', () => switchTab('deconstruct'));
     document.getElementById('tabColorPlates').addEventListener('click', () => switchTab('color'));
     document.getElementById('tabLiveStage').addEventListener('click', () => switchTab('stage'));
