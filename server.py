@@ -68,18 +68,66 @@ def segment(data_url, mode):
 
 # ---------------------------------------------------------------------------
 #  /api/vectorize  –  Raster → SVG <path> decomposition (vtracer)
+#  with smart pre-trace enhancement pipeline
 # ---------------------------------------------------------------------------
 
-def vectorize(data_url):
-    """Decompose a raster image into clean SVG paths by pre-masking with rembg
-    so vtracer only traces true foreground artwork (no background junk)."""
-    import vtracer
+def _preprocess_for_vectorization(pil_img, num_colors=12):
+    """Cleanse raster artwork into solid, crisp colour regions before tracing.
+
+    Pipeline stages:
+      A. Neural background cutout  (rembg / u2net)
+      B. Hard binary alpha          → eliminates soft edge fringes
+      C. Median surface flattening  → removes anti-alias noise
+      D. Colour quantization        → collapses gradients to solid swatches
+      E. Re-apply clean alpha mask
+    """
+    import numpy as np
+    from PIL import Image as PILImage, ImageFilter
     from rembg import remove
+
+    if pil_img.mode != "RGBA":
+        pil_img = pil_img.convert("RGBA")
+
+    # --- A: Neural background removal ---
+    try:
+        cutout = remove(pil_img, session=session()).convert("RGBA")
+    except Exception:
+        cutout = pil_img
+
+    r, g, b, a = cutout.split()
+
+    # --- B: Hard binarise alpha (>140 → opaque, else transparent) ---
+    alpha_np = np.array(a)
+    binary_alpha = np.where(alpha_np > 140, 255, 0).astype(np.uint8)
+    a_clean = PILImage.fromarray(binary_alpha, mode="L")
+
+    clean_rgb = PILImage.merge("RGB", (r, g, b))
+
+    # --- C: Median filter – smooths micro-noise & AA artefacts ---
+    smoothed = clean_rgb.filter(ImageFilter.MedianFilter(size=3))
+
+    # --- D: Colour quantisation – solid brand swatches, no dithering ---
+    quantized = smoothed.quantize(
+        colors=num_colors,
+        method=PILImage.Quantize.MEDIANCUT,
+        dither=PILImage.Dither.NONE,
+    )
+    quantized_rgb = quantized.convert("RGB")
+
+    # --- E: Re-apply clean binary alpha ---
+    r_q, g_q, b_q = quantized_rgb.split()
+    return PILImage.merge("RGBA", (r_q, g_q, b_q, a_clean))
+
+
+def vectorize(data_url):
+    """Decompose a raster image into clean SVG paths via the pre-trace
+    enhancement pipeline + vtracer."""
+    import vtracer
 
     img = _decode_image(data_url)
 
-    # --- Pre-mask: strip background so vtracer ignores it entirely ---
-    masked = remove(img, session=session()).convert("RGBA")
+    # Run the full cleansing pipeline before tracing
+    preprocessed = _preprocess_for_vectorization(img)
 
     # vtracer requires both an input image path AND an output SVG path
     fd_in, in_path = tempfile.mkstemp(suffix=".png")
@@ -87,7 +135,7 @@ def vectorize(data_url):
     try:
         os.close(fd_in)
         os.close(fd_out)
-        masked.save(in_path, "PNG")
+        preprocessed.save(in_path, "PNG")
         vtracer.convert_image_to_svg_py(
             in_path,
             out_path,
