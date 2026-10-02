@@ -77,13 +77,16 @@ def vectorize(data_url):
 
     img = _decode_image(data_url)
 
-    # vtracer works on files – write a temp PNG
-    fd, tmp_path = tempfile.mkstemp(suffix=".png")
+    # vtracer requires both an input image path AND an output SVG path
+    fd_in, in_path = tempfile.mkstemp(suffix=".png")
+    fd_out, out_path = tempfile.mkstemp(suffix=".svg")
     try:
-        os.close(fd)
-        img.save(tmp_path, "PNG")
-        svg_str = vtracer.convert_image_to_svg_py(
-            tmp_path,
+        os.close(fd_in)
+        os.close(fd_out)
+        img.save(in_path, "PNG")
+        vtracer.convert_image_to_svg_py(
+            in_path,
+            out_path,
             colormode="color",
             hierarchical="stacked",
             mode="spline",
@@ -96,11 +99,14 @@ def vectorize(data_url):
             splice_threshold=45,
             path_precision=3,
         )
+        with open(out_path, "r", encoding="utf-8") as f:
+            svg_str = f.read()
     finally:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
+        for p in (in_path, out_path):
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
 
     # Parse SVG XML – handle both namespaced and bare elements
     root = ET.fromstring(svg_str)
