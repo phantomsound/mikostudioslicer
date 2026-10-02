@@ -71,11 +71,15 @@ def segment(data_url, mode):
 # ---------------------------------------------------------------------------
 
 def vectorize(data_url):
-    """Decompose a raster image into SVG path elements grouped by color."""
+    """Decompose a raster image into clean SVG paths by pre-masking with rembg
+    so vtracer only traces true foreground artwork (no background junk)."""
     import vtracer
-    import xml.etree.ElementTree as ET
+    from rembg import remove
 
     img = _decode_image(data_url)
+
+    # --- Pre-mask: strip background so vtracer ignores it entirely ---
+    masked = remove(img, session=session()).convert("RGBA")
 
     # vtracer requires both an input image path AND an output SVG path
     fd_in, in_path = tempfile.mkstemp(suffix=".png")
@@ -83,16 +87,16 @@ def vectorize(data_url):
     try:
         os.close(fd_in)
         os.close(fd_out)
-        img.save(in_path, "PNG")
+        masked.save(in_path, "PNG")
         vtracer.convert_image_to_svg_py(
             in_path,
             out_path,
             colormode="color",
             hierarchical="stacked",
             mode="spline",
-            filter_speckle=4,
+            filter_speckle=16,
             color_precision=6,
-            layer_difference=16,
+            layer_difference=20,
             corner_threshold=60,
             length_threshold=4.0,
             max_iterations=10,
@@ -108,35 +112,7 @@ def vectorize(data_url):
             except OSError:
                 pass
 
-    # Parse SVG XML – handle both namespaced and bare elements
-    root = ET.fromstring(svg_str)
-    path_els = root.findall(".//{http://www.w3.org/2000/svg}path")
-    if not path_els:
-        path_els = root.findall(".//path")
-
-    # viewBox → pixel scale factors
-    vb = root.get("viewBox", "").split()
-    vb_w = float(vb[2]) if len(vb) >= 4 else img.width
-    vb_h = float(vb[3]) if len(vb) >= 4 else img.height
-    sx = img.width / vb_w if vb_w else 1
-    sy = img.height / vb_h if vb_h else 1
-
-    paths = []
-    for i, el in enumerate(path_els):
-        d = el.get("d", "")
-        fill = el.get("fill", "#000000")
-        opacity = float(el.get("opacity", el.get("fill-opacity", "1")))
-        if not d or fill.lower() == "none":
-            continue
-        paths.append({
-            "name": f"Path {fill}",
-            "d": d,
-            "fill": fill,
-            "opacity": opacity,
-            "scaleX": round(sx, 6),
-            "scaleY": round(sy, 6),
-        })
-    return paths
+    return {"success": True, "svg": svg_str}
 
 
 # ---------------------------------------------------------------------------
@@ -144,9 +120,10 @@ def vectorize(data_url):
 # ---------------------------------------------------------------------------
 
 def ocr(data_url):
-    """Extract text lines with bounding boxes, font-size estimates, and colours."""
+    """Extract text with preprocessing to handle multi-colour lettering."""
     import numpy as np
     import pytesseract
+    from PIL import ImageEnhance, ImageOps
 
     img = _decode_image(data_url).convert("RGB")
 
@@ -161,8 +138,20 @@ def ocr(data_url):
                 pytesseract.pytesseract.tesseract_cmd = p
                 break
 
-    data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+    # --- Preprocessing: 2× upscale + contrast boost so coloured letters survive ---
+    from PIL import Image as PILImage
+    w, h = img.size
+    _lanczos = getattr(PILImage, 'Resampling', PILImage).LANCZOS
+    img_up = img.resize((w * 2, h * 2), resample=_lanczos)
+    img_up = ImageEnhance.Contrast(img_up).enhance(2.5)
+    img_up = ImageOps.autocontrast(img_up)
+
     arr = np.array(img)
+
+    # Run Tesseract with tuned engine settings
+    custom_config = "--oem 3 --psm 6"
+    data = pytesseract.image_to_data(img_up, config=custom_config,
+                                     output_type=pytesseract.Output.DICT)
 
     # Group recognised words into lines
     n = len(data["text"])
@@ -177,53 +166,53 @@ def ocr(data_url):
             lines[key] = {"words": [], "x": 999999, "y": 999999, "x2": 0, "y2": 0}
         ld = lines[key]
         ld["words"].append(text)
-        lx, ly = data["left"][i], data["top"][i]
-        lw, lh = data["width"][i], data["height"][i]
+        # Coordinates are in 2× space — scale back to original
+        lx = data["left"][i] // 2
+        ly = data["top"][i] // 2
+        lw = data["width"][i] // 2
+        lh = data["height"][i] // 2
         ld["x"] = min(ld["x"], lx)
         ld["y"] = min(ld["y"], ly)
         ld["x2"] = max(ld["x2"], lx + lw)
         ld["y2"] = max(ld["y2"], ly + lh)
 
-    results = []
+    # Concatenate all lines into a single text result
+    all_lines = []
+    best_h = 0
     for key in sorted(lines.keys()):
         ld = lines[key]
-        text = " ".join(ld["words"])
-        h = ld["y2"] - ld["y"]
-        fontSize = max(12, int(h * 0.85))
+        all_lines.append(" ".join(ld["words"]))
+        best_h = max(best_h, ld["y2"] - ld["y"])
 
-        # Sample the dominant text colour from the bounding region
-        x1c = max(0, ld["x"])
-        y1c = max(0, ld["y"])
-        x2c = min(arr.shape[1], ld["x2"])
-        y2c = min(arr.shape[0], ld["y2"])
-        region = arr[y1c:y2c, x1c:x2c]
-        if region.size > 0:
-            gray = np.mean(region, axis=2)
-            med = np.median(gray)
-            # Text is usually the minority colour in its bounding box
-            if med > 127:
-                mask = gray < med * 0.7
-            else:
-                mask = gray > med * 1.3 + 30
-            if mask.any():
-                clr = region[mask].mean(axis=0).astype(int)
-            else:
-                clr = region.mean(axis=(0, 1)).astype(int)
-            fill = f"#{int(clr[0]):02x}{int(clr[1]):02x}{int(clr[2]):02x}"
+    full_text = " ".join(all_lines).strip()
+    if not full_text:
+        return {"success": False, "text": "", "fontSize": 72, "fill": "#000000"}
+
+    fontSize = max(12, int(best_h * 0.85))
+
+    # Sample dominant text colour from the first line's bounding region
+    first_ld = lines[sorted(lines.keys())[0]]
+    x1c = max(0, first_ld["x"])
+    y1c = max(0, first_ld["y"])
+    x2c = min(arr.shape[1], first_ld["x2"])
+    y2c = min(arr.shape[0], first_ld["y2"])
+    region = arr[y1c:y2c, x1c:x2c]
+    if region.size > 0:
+        gray = np.mean(region, axis=2)
+        med = np.median(gray)
+        if med > 127:
+            mask = gray < med * 0.7
         else:
-            fill = "#000000"
+            mask = gray > med * 1.3 + 30
+        if mask.any():
+            clr = region[mask].mean(axis=0).astype(int)
+        else:
+            clr = region.mean(axis=(0, 1)).astype(int)
+        fill = f"#{int(clr[0]):02x}{int(clr[1]):02x}{int(clr[2]):02x}"
+    else:
+        fill = "#000000"
 
-        results.append({
-            "text": text,
-            "x": int(ld["x"]),
-            "y": int(ld["y"]),
-            "w": int(ld["x2"] - ld["x"]),
-            "h": int(h),
-            "fontSize": fontSize,
-            "fill": fill,
-            "name": f'OCR "{text[:24]}"',
-        })
-    return results
+    return {"success": True, "text": full_text, "fontSize": fontSize, "fill": fill}
 
 
 # ---------------------------------------------------------------------------
@@ -262,9 +251,9 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"layers": segment(body["image"],
                                        "split" if mode == "split" else "cutout")})
             if path == "/api/vectorize":
-                return self.send_json({"paths": vectorize(body["image"])})
+                return self.send_json(vectorize(body["image"]))
             if path == "/api/ocr":
-                return self.send_json({"texts": ocr(body["image"])})
+                return self.send_json(ocr(body["image"]))
             self.send_json({"error": "not found"}, 404)
         except Exception as e:
             self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)

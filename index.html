@@ -495,17 +495,21 @@
             const valid = objects.filter(o => !(o.width >= bounds.w * 0.96 && o.height >= bounds.h * 0.96));
             const items = valid.length > 0 ? valid : objects;
 
-            // Group paths together so they remain assembled in exact relative alignment
+            // Group paths and center on canvas at readable proportions
             const group = fabric.util.groupSVGElements(items, options);
+            group.scaleToWidth(Math.min(450, fCanvas.getWidth() * 0.6));
             group.set({
-              left: 200,
-              top: 150,
-              name: `Vector Mark (${items.length} paths)`
+              left: fCanvas.getWidth() / 2,
+              top: fCanvas.getHeight() / 2,
+              originX: 'center',
+              originY: 'center',
+              name: `Vector Artwork (${items.length} paths)`
             });
 
             fCanvas.add(group);
             fCanvas.setActiveObject(group);
             fCanvas.renderAll();
+            saveCanvasState();
             switchTab('canvas');
             updateLayersUI();
             document.getElementById('statusText').innerText = `Assembled ${items.length} vector paths cleanly!`;
@@ -523,7 +527,12 @@
       const active = fCanvas.getActiveObject();
       if (!active || active.type !== 'group') return;
       active.toActiveSelection();
+      // Lock every child's world-space position after ungrouping
+      fCanvas.getActiveObject().forEachObject(obj => {
+        obj.setCoords();
+      });
       fCanvas.requestRenderAll();
+      saveCanvasState();
       updateLayersUI();
       document.getElementById('statusText').innerText = "Ungrouped into selectable paths!";
     });
