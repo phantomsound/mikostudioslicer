@@ -22,11 +22,14 @@ header{display:flex;align-items:center;gap:28px;padding:0 18px;height:52px;borde
 .btn{display:flex;align-items:center;gap:8px;background:#23262d;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
 .btn:hover{border-color:var(--gold)}.btn.gold{background:var(--gold);color:#121316;border-color:var(--gold);font-weight:600}
 .btn svg{width:16px;height:16px;flex:none}
+.btn:disabled{opacity:.45;pointer-events:none}
 input[type=text],input[type=number]{background:#0e0f12;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:7px 8px;font:inherit;font-size:13px;width:100%}
 input[type=color]{width:100%;height:32px;background:none;border:1px solid var(--line);border-radius:6px;padding:2px}
 .lbl{font-size:12px;color:var(--dim)}
-.lyr{padding:6px 8px;border-radius:5px;font-size:13px;cursor:pointer;border:1px solid transparent}
+.divider{border-top:1px solid var(--line);margin:4px 0}
+.lyr{padding:6px 8px;border-radius:5px;font-size:13px;cursor:pointer;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lyr:hover{background:#23262d}.lyr.on{border-color:var(--gold);background:#23262d}
+.lyr .ico{display:inline-block;width:18px;text-align:center;font-size:11px;margin-right:4px;opacity:.7}
 footer{height:30px;display:flex;align-items:center;gap:10px;padding:0 18px;border-top:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--dim)}
 #dot{width:8px;height:8px;border-radius:50%;background:#c0453a}#dot.ok{background:#4fae6b}
 </style></head>
@@ -45,9 +48,17 @@ footer{height:30px;display:flex;align-items:center;gap:10px;padding:0 18px;borde
     <label class="btn"><i data-lucide="image-plus"></i>Open image<input id="file" type="file" accept="image/*" hidden></label>
     <button class="btn" id="sample"><i data-lucide="file-image"></i>Load sample</button>
     <div class="lbl mt-2">Drag on the image to mark a region. No region uses the whole image.</div>
-    <button class="btn gold" id="cut"><i data-lucide="scissors"></i>Cut region (AI)</button>
-    <button class="btn gold" id="split"><i data-lucide="layers"></i>Auto-split into layers (AI)</button>
     <button class="btn" id="clr"><i data-lucide="square-dashed"></i>Clear region</button>
+
+    <div class="divider"></div>
+    <div class="lbl" style="font-weight:600;color:var(--gold)">AI Extraction</div>
+    <button class="btn gold" id="cut"><i data-lucide="scissors"></i>Cut region (AI)</button>
+    <button class="btn gold" id="split"><i data-lucide="layers"></i>Auto-split layers (AI)</button>
+
+    <div class="divider"></div>
+    <div class="lbl" style="font-weight:600;color:var(--gold)">Vector & Text</div>
+    <button class="btn gold" id="vec"><i data-lucide="pen-tool"></i>Vectorize region</button>
+    <button class="btn gold" id="ocr"><i data-lucide="scan-text"></i>Extract text (OCR)</button>
   </div>
   <div class="stage" id="s1"><canvas id="c1"></canvas></div>
 </section>
@@ -55,12 +66,17 @@ footer{height:30px;display:flex;align-items:center;gap:10px;padding:0 18px;borde
 <section id="t2" class="tab">
   <div class="side">
     <div class="lbl">Fill</div><input type="color" id="col" value="#d4a64a">
+    <div class="lbl">Stroke</div><input type="color" id="scol" value="#000000">
+    <div class="lbl">Stroke width</div><input type="number" id="sw" value="0" min="0" max="50">
     <div class="lbl">Text size</div><input type="number" id="fs" value="72" min="6" max="600">
+    <div class="divider"></div>
     <button class="btn" id="addText"><i data-lucide="type"></i>Add live text</button>
     <button class="btn" id="addRect"><i data-lucide="square"></i>Add vector shape</button>
+    <div class="divider"></div>
     <button class="btn" id="up"><i data-lucide="arrow-up"></i>Bring forward</button>
     <button class="btn" id="down"><i data-lucide="arrow-down"></i>Send backward</button>
     <button class="btn" id="del"><i data-lucide="trash-2"></i>Delete</button>
+    <div class="divider"></div>
     <button class="btn gold" id="psd2"><i data-lucide="download"></i>Export PSD</button>
     <button class="btn" id="zip2"><i data-lucide="archive"></i>Export PNG layers (ZIP)</button>
   </div>
@@ -83,6 +99,9 @@ footer{height:30px;display:flex;align-items:center;gap:10px;padding:0 18px;borde
 <footer><span id="dot"></span><span id="srv">Server offline</span><span style="margin-left:auto" id="msg">Open an image to begin.</span></footer>
 
 <script>
+/* ------------------------------------------------------------------ */
+/*  Globals                                                           */
+/* ------------------------------------------------------------------ */
 const $=s=>document.querySelector(s), msg=t=>$('#msg').textContent=t;
 let src=null, doc={w:1920,h:1080}, seq=0;
 const c1=new fabric.Canvas('c1',{selection:false}),
@@ -96,12 +115,16 @@ function fit(c){const s=$(stage[c.lowerCanvasEl.id]);if(!s.clientWidth)return;
 const fitAll=()=>[c1,c2,c3].forEach(fit);
 addEventListener('resize',fitAll);
 
-/* tabs */
+/* ------------------------------------------------------------------ */
+/*  Tab switching                                                     */
+/* ------------------------------------------------------------------ */
 document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabbtn,.tab').forEach(e=>e.classList.remove('on'));
   b.classList.add('on');$('#'+b.dataset.t).classList.add('on');fitAll();});
 
-/* tab 1: source + marquee */
+/* ------------------------------------------------------------------ */
+/*  Tab 1 — Source image + marquee selection                          */
+/* ------------------------------------------------------------------ */
 function loadSrc(url){const im=new Image();im.onload=()=>{
   src=im;doc={w:im.naturalWidth,h:im.naturalHeight};c1._l=doc;c1.clear();sel=null;
   c1.setBackgroundImage(new fabric.Image(im),()=>{});
@@ -123,6 +146,10 @@ function region(){if(!sel)return{x:0,y:0,w:doc.w,h:doc.h};
   return{x,y,w:Math.min(doc.w-x,Math.round(sel.width)),h:Math.min(doc.h-y,Math.round(sel.height))};}
 function crop(r){const k=document.createElement('canvas');k.width=r.w;k.height=r.h;
   k.getContext('2d').drawImage(src,r.x,r.y,r.w,r.h,0,0,r.w,r.h);return k.toDataURL('image/png');}
+
+/* ------------------------------------------------------------------ */
+/*  AI segment — neural cutout / auto-split (rembg + u2net)           */
+/* ------------------------------------------------------------------ */
 async function ai(mode){
   if(!src)return msg('Open an image first.');
   const r=region();msg('Segmenting… the first run loads the model.');
@@ -137,16 +164,109 @@ async function ai(mode){
   }catch(e){msg('AI error: '+e.message);}}
 $('#cut').onclick=()=>ai('cutout');$('#split').onclick=()=>ai('split');
 
-/* tab 2: editing */
+/* ------------------------------------------------------------------ */
+/*  Vectorize region — raster → Bézier <path> decomposition          */
+/* ------------------------------------------------------------------ */
+async function vectorizeRegion(){
+  if(!src)return msg('Open an image first.');
+  const r=region();msg('Vectorizing… tracing colour boundaries.');
+  try{
+    const res=await fetch('/api/vectorize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:crop(r)})});
+    const j=await res.json();if(!res.ok)throw new Error(j.error);
+    if(!j.paths||!j.paths.length)return msg('No vector paths found in that region.');
+    if(!c2.getObjects().length){c2._l=doc;}
+    j.paths.forEach(p=>{
+      const path=new fabric.Path(p.d,{
+        fill:p.fill,stroke:'',strokeWidth:0,
+        opacity:p.opacity||1,
+        name:p.name+' '+(++seq),
+        selectable:true,evented:true,strokeUniform:true
+      });
+      /* Apply viewBox scaling if needed */
+      if(p.scaleX&&p.scaleX!==1)path.set({scaleX:p.scaleX});
+      if(p.scaleY&&p.scaleY!==1)path.set({scaleY:p.scaleY});
+      /* Offset by the selected region on the source image */
+      path.set({left:(path.left||0)+r.x,top:(path.top||0)+r.y});
+      path.setCoords();
+      c2.add(path);
+    });
+    fitAll();msg(`${j.paths.length} vector path(s) added to Photoshop Canvas.`);
+  }catch(e){msg('Vectorize error: '+e.message);}}
+$('#vec').onclick=vectorizeRegion;
+
+/* ------------------------------------------------------------------ */
+/*  OCR text extraction — pytesseract → fabric.IText                  */
+/* ------------------------------------------------------------------ */
+async function extractOCR(){
+  if(!src)return msg('Open an image first.');
+  const r=region();msg('Extracting text… running OCR.');
+  try{
+    const res=await fetch('/api/ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:crop(r)})});
+    const j=await res.json();if(!res.ok)throw new Error(j.error);
+    if(!j.texts||!j.texts.length)return msg('No text found in that region.');
+    if(!c2.getObjects().length){c2._l=doc;}
+    j.texts.forEach(t=>{
+      const txt=new fabric.IText(t.text,{
+        left:r.x+t.x,top:r.y+t.y,
+        fontFamily:'Arial',fontSize:t.fontSize,
+        fill:t.fill,
+        name:t.name+' '+(++seq)
+      });
+      c2.add(txt);
+    });
+    fitAll();msg(`${j.texts.length} text block(s) added to Photoshop Canvas.`);
+  }catch(e){msg('OCR error: '+e.message);}}
+$('#ocr').onclick=extractOCR;
+
+/* ------------------------------------------------------------------ */
+/*  Tab 2 — Photoshop Canvas editing                                  */
+/* ------------------------------------------------------------------ */
+
+/* Colour / hex helper */
+function hexCol(c){
+  if(!c)return'#000000';
+  if(/^#[0-9a-f]{6}$/i.test(c))return c;
+  try{const s=new fabric.Color(c).getSource();
+    return'#'+[s[0],s[1],s[2]].map(v=>(v|0).toString(16).padStart(2,'0')).join('');}
+  catch(e){return'#000000';}}
+
+/* Layer type icons */
+function typeIcon(o){
+  if(o.type==='image')return'📷';
+  if(o.type==='path')return'✏️';
+  if(o.type==='i-text')return'T';
+  if(o.type==='rect')return'▪';
+  return'●';}
+
+/* Layer panel refresh */
 function refresh(){const l=$('#layers');l.innerHTML='';const a=c2.getActiveObject();
   c2.getObjects().slice().reverse().forEach(o=>{const d=document.createElement('div');
-    d.className='lyr'+(o===a?' on':'');d.textContent=o.name||o.type;
+    d.className='lyr'+(o===a?' on':'');
+    d.innerHTML='<span class="ico">'+typeIcon(o)+'</span>'+(o.name||o.type);
     d.onclick=()=>{c2.setActiveObject(o);c2.requestRenderAll();};l.appendChild(d);});}
 ['object:added','object:removed','object:modified','selection:created','selection:updated','selection:cleared'].forEach(e=>c2.on(e,refresh));
+
+/* Sync the property panel when an object is selected */
+function syncPanel(){
+  const o=c2.getActiveObject();if(!o||o.type==='image')return;
+  try{$('#col').value=hexCol(o.fill);}catch(e){}
+  try{if(o.stroke)$('#scol').value=hexCol(o.stroke);}catch(e){}
+  if(o.strokeWidth!=null)$('#sw').value=Math.round(o.strokeWidth);
+  if(o.type==='i-text'&&o.fontSize)$('#fs').value=Math.round(o.fontSize);}
+c2.on('selection:created',syncPanel);
+c2.on('selection:updated',syncPanel);
+
+/* Add objects */
 $('#addText').onclick=()=>{const t=new fabric.IText('Edit text',{left:80,top:80,fontFamily:'Arial',fontSize:+$('#fs').value||72,fill:$('#col').value,name:'Text '+(++seq)});c2.add(t).setActiveObject(t);};
 $('#addRect').onclick=()=>{const r=new fabric.Rect({left:80,top:80,width:400,height:200,fill:$('#col').value,name:'Shape '+(++seq)});c2.add(r).setActiveObject(r);};
+
+/* Property handlers: fill, stroke, stroke-width, font-size */
 $('#col').oninput=e=>{const o=c2.getActiveObject();if(o&&o.type!=='image'){o.set('fill',e.target.value);c2.requestRenderAll();}};
+$('#scol').oninput=e=>{const o=c2.getActiveObject();if(o&&o.type!=='image'){o.set('stroke',e.target.value);if(!o.strokeWidth)o.set('strokeWidth',1);c2.requestRenderAll();}};
+$('#sw').oninput=e=>{const o=c2.getActiveObject();if(o&&o.type!=='image'){o.set({strokeWidth:+e.target.value||0,strokeUniform:true});c2.requestRenderAll();}};
 $('#fs').oninput=e=>{const o=c2.getActiveObject();if(o&&o.type==='i-text'){o.set('fontSize',+e.target.value||72);c2.requestRenderAll();}};
+
+/* Delete, reorder */
 const del=()=>{c2.getActiveObjects().forEach(o=>c2.remove(o));c2.discardActiveObject();c2.requestRenderAll();};
 $('#del').onclick=del;
 addEventListener('keydown',e=>{const o=c2.getActiveObject();
@@ -154,7 +274,9 @@ addEventListener('keydown',e=>{const o=c2.getActiveObject();
 $('#up').onclick=()=>{const o=c2.getActiveObject();o&&(c2.bringForward(o),refresh());};
 $('#down').onclick=()=>{const o=c2.getActiveObject();o&&(c2.sendBackwards(o),refresh());};
 
-/* export */
+/* ------------------------------------------------------------------ */
+/*  Export — PSD, ZIP                                                 */
+/* ------------------------------------------------------------------ */
 function layerOf(o){const bb=o.getBoundingRect(true,true);
   const L={name:o.name||o.type,canvas:o.toCanvasElement({enableRetinaScaling:false}),left:Math.round(bb.left),top:Math.round(bb.top)};
   if(o.type==='i-text'){const [r,g,b]=new fabric.Color(o.fill).getSource();
@@ -174,7 +296,9 @@ async function exportZip(c,name){const kids=layersOf(c);if(!kids.length)return m
 $('#psd2').onclick=()=>exportPSD(c2,'miko_canvas');
 $('#zip2').onclick=()=>exportZip(c2,'miko_canvas');
 
-/* tab 3: lower third */
+/* ------------------------------------------------------------------ */
+/*  Tab 3 — Lower Third Studio                                       */
+/* ------------------------------------------------------------------ */
 function build3(){c3.clear();const x=120,y=1080-300,h=150,a=$('#acc').value;
   const n=new fabric.IText($('#nm').value,{left:x+50,top:y+16,fontFamily:'Arial',fontWeight:'bold',fontSize:64,fill:'#ffffff',name:'Name'});
   const t=new fabric.IText($('#ti').value,{left:x+50,top:y+92,fontFamily:'Arial',fontSize:36,fill:'#cfd2d8',name:'Title'});
@@ -186,7 +310,9 @@ $('#png3').onclick=()=>{const k=layersOf(c3);if(!k.length)return msg('Build a na
 $('#psd3').onclick=()=>exportPSD(c3,'lower_third');
 build3();
 
-/* boot */
+/* ------------------------------------------------------------------ */
+/*  Boot                                                              */
+/* ------------------------------------------------------------------ */
 lucide.createIcons();
 fetch('/health').then(r=>r.json()).then(j=>{if(j.app==='Miko Studio Slicer'){$('#dot').classList.add('ok');$('#srv').textContent='Server online';}}).catch(()=>{});
 </script>

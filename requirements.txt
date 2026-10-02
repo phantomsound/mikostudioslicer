@@ -3,3 +3,5 @@ pillow
 onnxruntime
 numpy
 scipy
+vtracer
+pytesseract
