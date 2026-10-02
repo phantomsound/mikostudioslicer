@@ -1,21 +1,8 @@
 @echo off
-title MikoStudioSlicer Installer
-cd /d "%~dp0"
-
-:: Check for Administrator privileges; if not elevated, prompt UAC
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [*] Requesting Administrator privileges to install to Program Files...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
     exit /b
 )
-
-echo [*] Launching MikoStudioSlicer Setup Wizard...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1"
-
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo [ERROR] Installation failed or exited with code %ERRORLEVEL%.
-    pause
-    exit /b %ERRORLEVEL%
-)
+cd /d "%~dp0"
+powershell -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0install.ps1"

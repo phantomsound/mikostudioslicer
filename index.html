@@ -1,668 +1,193 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Miko Studio Slicer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Fabric.js provides the live interactive Photoshop/Illustrator canvas object engine -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ag-psd/dist/bundle.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <style>
-    .checker-pattern {
-      background-image: linear-gradient(45deg, #1c1d22 25%, transparent 25%),
-                        linear-gradient(-45deg, #1c1d22 25%, transparent 25%),
-                        linear-gradient(45deg, transparent 75%, #1c1d22 75%),
-                        linear-gradient(-45deg, transparent 75%, #1c1d22 75%);
-      background-size: 16px 16px;
-      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
-      background-color: #141418;
-    }
-  </style>
-</head>
-<body class="bg-[#121316] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-black">
-
-  <!-- APP HEADER -->
-  <header class="border-b border-[#24252f] bg-[#18191f]/90 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-40">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-lg">
-        M
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-sm font-semibold tracking-wide text-slate-100">Miko Studio Slicer</h1>
-          <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">Photoshop Layer Studio</span>
-        </div>
-        <p class="text-xs text-slate-400">Deconstruct Images into Live Editable Text, Vector Blocks & AI Cutouts</p>
-      </div>
-    </div>
-
-    <!-- WORKSPACE TABS -->
-    <div class="flex items-center bg-[#1e2027] border border-[#2b2d37] p-1 rounded-xl text-xs font-medium">
-      <button id="tabDeconstruct" class="px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5">
-        <i data-lucide="scissors" class="w-3.5 h-3.5"></i> 1. Pull & Deconstruct
-      </button>
-      <button id="tabCanvas" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
-        <i data-lucide="layers" class="w-3.5 h-3.5"></i> 2. Photoshop Canvas
-      </button>
-      <button id="tabLowerThird" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
-        <i data-lucide="tv" class="w-3.5 h-3.5"></i> 3. Lower Third Studio
-      </button>
-    </div>
-
-    <!-- ACTIONS -->
-    <div class="flex items-center gap-2.5">
-      <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3.5 py-2 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
-        <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Upload Concept
-        <input type="file" id="fileInput" accept="image/*" class="hidden">
-      </label>
-      <button id="btnExportPSD" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-2">
-        <i data-lucide="file-output" class="w-4 h-4"></i> Export Layered .PSD
-      </button>
-    </div>
-  </header>
-
-  <!-- MAIN WORKSPACE -->
-  <main class="flex-1 flex overflow-hidden">
-    <!-- VIEWPORT AREA -->
-    <div class="flex-1 flex flex-col p-5 overflow-hidden">
-      <!-- Toolbar -->
-      <div class="mb-3 flex items-center justify-between bg-[#18191f] border border-[#262833] px-4 py-2 rounded-xl text-xs">
-        <div id="toolbarDeconstruct" class="flex items-center gap-3">
-          <span class="text-slate-400">Box selection mode:</span>
-          <button id="btnModeText" class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-medium">
-            <i data-lucide="type" class="w-3 h-3"></i> Extract as Live Text
-          </button>
-          <button id="btnModeBlock" class="px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1">
-            <i data-lucide="square" class="w-3 h-3"></i> Extract as Vector Block
-          </button>
-          <button id="btnModeCutout" class="px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1">
-            <i data-lucide="sparkles" class="w-3 h-3 text-emerald-400"></i> Extract as AI Cutout
-          </button>
-        </div>
-
-        <div id="toolbarCanvas" class="flex items-center gap-3 hidden">
-          <span class="text-slate-400">Transform: Click any element to drag, resize, rotate, or re-type live text.</span>
-          <button id="btnBringForward" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white">Bring Forward</button>
-          <button id="btnSendBackward" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white">Send Backward</button>
-        </div>
-
-        <div id="toolbarLowerThird" class="flex items-center gap-3 hidden">
-          <span class="text-slate-400">SMPTE 1920x1080 Broadcast Viewport.</span>
-          <button id="btnExport1080pPNG" class="px-3 py-1 rounded bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 flex items-center gap-1">
-            <i data-lucide="download" class="w-3 h-3"></i> Download 1080p Broadcast PNG
-          </button>
-        </div>
-
-        <div id="statusText" class="text-slate-400 font-mono text-[11px]">Ready</div>
-      </div>
-
-      <!-- Stage Container -->
-      <div class="flex-1 rounded-2xl border border-[#242631] checker-pattern relative overflow-auto flex items-center justify-center p-6" id="stageContainer">
-        <!-- 1. Source Extraction Canvas -->
-        <canvas id="sourceCanvas" class="shadow-2xl max-w-full max-h-full cursor-crosshair rounded border border-slate-700/40"></canvas>
-
-        <!-- 2. Photoshop Interactive Fabric Canvas -->
-        <div id="fabricWrapper" class="hidden shadow-2xl rounded border border-slate-700/60 overflow-hidden">
-          <canvas id="fabricCanvas" width="1280" height="720"></canvas>
-        </div>
-
-        <!-- 3. Broadcast Lower Third Stage -->
-        <div id="lowerThirdStage" class="hidden relative border border-dashed border-indigo-500/40 bg-black/75 shadow-2xl flex items-end p-16" style="width: 1280px; height: 720px;">
-          <div class="absolute inset-[10%] border border-cyan-500/30 pointer-events-none flex items-start justify-end p-2 text-[10px] font-mono text-cyan-400">
-            TITLE SAFE (80%)
-          </div>
-          <div id="ltBannerBox" class="relative z-10 flex items-center gap-4 bg-[#0f172a] border border-amber-500/50 p-4 rounded-2xl shadow-2xl min-w-[540px]">
-            <div id="ltIconSlot" class="w-20 h-20 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center overflow-hidden shrink-0">
-              <i data-lucide="image" class="w-8 h-8 text-amber-400"></i>
-            </div>
-            <div class="flex-1">
-              <div id="ltRoleDisplay" class="text-xs uppercase font-extrabold tracking-wider text-amber-400 mb-0.5">SPEAKER ROLE / TITLE</div>
-              <div id="ltNameDisplay" class="text-2xl font-black tracking-tight text-white">SPEAKER NAME HERE</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: LAYER STACK & PROPERTY INSPECTOR -->
-    <div class="w-96 border-l border-[#24252f] bg-[#18191f]/60 backdrop-blur p-5 flex flex-col justify-between overflow-y-auto">
-      <div>
-        <div class="flex items-center justify-between pb-3 border-b border-[#252733] mb-4">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Photoshop Layers</h2>
-          <span id="layerCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0 Layers</span>
-        </div>
-
-        <!-- Dynamic Property Inspector -->
-        <div id="inspectorPanel" class="mb-4 bg-[#14151a] p-3.5 rounded-xl border border-[#262834] space-y-3">
-          <div class="flex items-center justify-between text-xs font-bold text-amber-400">
-            <span id="inspectorTitle">No Object Selected</span>
-            <span id="inspectorType" class="text-[10px] text-slate-400 font-mono">Click canvas item</span>
-          </div>
-
-          <!-- Text Properties -->
-          <div id="textControls" class="space-y-2 hidden">
-            <div>
-              <label class="text-[11px] text-slate-400">Edit Text Content:</label>
-              <input type="text" id="propTextContent" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="text-[11px] text-slate-400">Font:</label>
-                <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
-                  <option value="Arial">Arial</option>
-                  <option value="Impact">Impact (Headline)</option>
-                  <option value="Trebuchet MS">Trebuchet MS</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Courier New">Courier New</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-[11px] text-slate-400">Size:</label>
-                <input type="number" id="propFontSize" min="8" max="250" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
-              </div>
-            </div>
-            <div class="flex items-center gap-2 pt-1">
-              <label class="text-[11px] text-slate-400">Color:</label>
-              <input type="color" id="propTextColor" class="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent">
-            </div>
-          </div>
-
-          <!-- Shape / Block Properties -->
-          <div id="shapeControls" class="space-y-2 hidden">
-            <div class="flex items-center justify-between">
-              <label class="text-[11px] text-slate-400">Fill Color:</label>
-              <input type="color" id="propShapeFill" class="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent">
-            </div>
-            <div class="flex items-center justify-between">
-              <label class="text-[11px] text-slate-400">Stroke Color:</label>
-              <input type="color" id="propShapeStroke" class="w-7 h-7 rounded border border-slate-700 cursor-pointer bg-transparent">
-            </div>
-            <div>
-              <label class="text-[11px] text-slate-400">Border Radius:</label>
-              <input type="range" id="propShapeRadius" min="0" max="50" value="0" class="w-full accent-amber-500">
-            </div>
-          </div>
-
-          <!-- Cutout / Image Properties -->
-          <div id="imageControls" class="space-y-2 hidden">
-            <button id="btnRunAIDefringe" class="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs py-1.5 rounded flex items-center justify-center gap-1 font-semibold">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Run Local AI Neural Cutout
-            </button>
-          </div>
-        </div>
-
-        <!-- Layers List -->
-        <div id="layersList" class="space-y-2"></div>
-      </div>
-
-      <!-- Footer Buttons -->
-      <div class="pt-4 border-t border-[#252733] space-y-2">
-        <button id="btnExportSVG" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2.5 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-2">
-          <i data-lucide="bezier" class="w-4 h-4 text-indigo-400"></i> Export Scalable Vector (.SVG)
-        </button>
-      </div>
-    </div>
-  </main>
-
-  <script>
-    lucide.createIcons();
-
-    // 1. Source Image Setup
-    const sCanvas = document.getElementById('sourceCanvas');
-    const sCtx = sCanvas.getContext('2d');
-    let sourceImg = new Image();
-    let isDrawing = false;
-    let startX = 0, startY = 0;
-    let extractMode = 'text'; // 'text', 'block', 'cutout'
-
-    // 2. Fabric.js Interactive Canvas
-    const fCanvas = new fabric.Canvas('fabricCanvas', {
-      backgroundColor: '#12141A',
-      preserveObjectStacking: true
-    });
-
-    sourceImg.onload = () => {
-      sCanvas.width = sourceImg.width;
-      sCanvas.height = sourceImg.height;
-      redrawSource();
-    };
-    sourceImg.src = "sample_concept.png";
-
-    document.getElementById('fileInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        sourceImg = new Image();
-        sourceImg.onload = () => {
-          sCanvas.width = sourceImg.width;
-          sCanvas.height = sourceImg.height;
-          redrawSource();
-          document.getElementById('statusText').innerText = `Loaded: ${file.name}`;
-        };
-        sourceImg.src = evt.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Box extraction on source canvas
-    sCanvas.addEventListener('mousedown', (e) => {
-      const rect = sCanvas.getBoundingClientRect();
-      const sx = sCanvas.width / rect.width;
-      const sy = sCanvas.height / rect.height;
-      startX = (e.clientX - rect.left) * sx;
-      startY = (e.clientY - rect.top) * sy;
-      isDrawing = true;
-    });
-
-    sCanvas.addEventListener('mousemove', (e) => {
-      if (!isDrawing) return;
-      const rect = sCanvas.getBoundingClientRect();
-      const sx = sCanvas.width / rect.width;
-      const sy = sCanvas.height / rect.height;
-      const curX = (e.clientX - rect.left) * sx;
-      const curY = (e.clientY - rect.top) * sy;
-
-      redrawSource();
-      sCtx.strokeStyle = '#f59e0b';
-      sCtx.lineWidth = 2;
-      sCtx.strokeRect(startX, startY, curX - startX, curY - startY);
-    });
-
-    sCanvas.addEventListener('mouseup', (e) => {
-      if (!isDrawing) return;
-      isDrawing = false;
-      const rect = sCanvas.getBoundingClientRect();
-      const sx = sCanvas.width / rect.width;
-      const sy = sCanvas.height / rect.height;
-      const endX = (e.clientX - rect.left) * sx;
-      const endY = (e.clientY - rect.top) * sy;
-
-      const x = Math.min(startX, endX);
-      const y = Math.min(startY, endY);
-      const w = Math.abs(endX - startX);
-      const h = Math.abs(endY - startY);
-
-      if (w > 15 && h > 15) {
-        deconstructRegion(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
-      }
-      redrawSource();
-    });
-
-    function redrawSource() {
-      sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
-      sCtx.drawImage(sourceImg, 0, 0);
-    }
-
-    // Extraction Engine: Converts region into Live Text, Vector Block, or Cutout
-    function deconstructRegion(x, y, w, h) {
-      // Sample center pixel color for default text/block color
-      const centerPixel = sCtx.getImageData(x + w/2, y + h/2, 1, 1).data;
-      const sampledHex = "#" + ((1 << 24) + (centerPixel[0] << 16) + (centerPixel[1] << 8) + centerPixel[2]).toString(16).slice(1);
-
-      if (extractMode === 'text') {
-        const textVal = prompt("Enter text for this live layer (or keep default):", "UPSTAIRS") || "SAMPLE TEXT";
-        const textObj = new fabric.IText(textVal, {
-          left: 100 + (fCanvas.getObjects().length * 20),
-          top: 100 + (fCanvas.getObjects().length * 20),
-          fontFamily: 'Impact',
-          fontSize: Math.max(18, Math.round(h * 0.7)),
-          fill: sampledHex,
-          name: `Text: ${textVal}`
-        });
-        fCanvas.add(textObj);
-        fCanvas.setActiveObject(textObj);
-      } else if (extractMode === 'block') {
-        const rectObj = new fabric.Rect({
-          left: 100 + (fCanvas.getObjects().length * 20),
-          top: 100 + (fCanvas.getObjects().length * 20),
-          width: w,
-          height: h,
-          fill: sampledHex,
-          stroke: '#F59E0B',
-          strokeWidth: 2,
-          rx: 8,
-          ry: 8,
-          name: `Block: ${w}x${h}`
-        });
-        fCanvas.add(rectObj);
-        fCanvas.setActiveObject(rectObj);
-      } else if (extractMode === 'cutout') {
-        const tempC = document.createElement('canvas');
-        tempC.width = w;
-        tempC.height = h;
-        tempC.getContext('2d').drawImage(sourceImg, x, y, w, h, 0, 0, w, h);
-
-        fabric.Image.fromURL(tempC.toDataURL(), (imgObj) => {
-          imgObj.set({
-            left: 100 + (fCanvas.getObjects().length * 20),
-            top: 100 + (fCanvas.getObjects().length * 20),
-            name: `Cutout: ${w}x${h}`
-          });
-          fCanvas.add(imgObj);
-          fCanvas.setActiveObject(imgObj);
-        });
-      }
-
-      switchTab('canvas');
-      updateLayersUI();
-      document.getElementById('statusText').innerText = `Extracted as ${extractMode.toUpperCase()}`;
-    }
-
-    // Tool Mode Toggles
-    const modes = [
-      { id: 'btnModeText', mode: 'text' },
-      { id: 'btnModeBlock', mode: 'block' },
-      { id: 'btnModeCutout', mode: 'cutout' }
-    ];
-
-    modes.forEach(m => {
-      document.getElementById(m.id).addEventListener('click', () => {
-        extractMode = m.mode;
-        modes.forEach(o => {
-          document.getElementById(o.id).className = (o.mode === extractMode)
-            ? "px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-medium"
-            : "px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1";
-        });
-      });
-    });
-
-    // Tab Switching
-    document.getElementById('tabDeconstruct').addEventListener('click', () => switchTab('deconstruct'));
-    document.getElementById('tabCanvas').addEventListener('click', () => switchTab('canvas'));
-    document.getElementById('tabLowerThird').addEventListener('click', () => switchTab('lowerthird'));
-
-    function switchTab(t) {
-      ['tabDeconstruct', 'tabCanvas', 'tabLowerThird'].forEach(id => {
-        document.getElementById(id).className = "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
-      });
-
-      document.getElementById('toolbarDeconstruct').classList.add('hidden');
-      document.getElementById('toolbarCanvas').classList.add('hidden');
-      document.getElementById('toolbarLowerThird').classList.add('hidden');
-
-      sCanvas.classList.add('hidden');
-      document.getElementById('fabricWrapper').classList.add('hidden');
-      document.getElementById('lowerThirdStage').classList.add('hidden');
-
-      if (t === 'deconstruct') {
-        document.getElementById('tabDeconstruct').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
-        document.getElementById('toolbarDeconstruct').classList.remove('hidden');
-        sCanvas.classList.remove('hidden');
-      } else if (t === 'canvas') {
-        document.getElementById('tabCanvas').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
-        document.getElementById('toolbarCanvas').classList.remove('hidden');
-        document.getElementById('fabricWrapper').classList.remove('hidden');
-        fCanvas.renderAll();
-      } else if (t === 'lowerthird') {
-        document.getElementById('tabLowerThird').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
-        document.getElementById('toolbarLowerThird').classList.remove('hidden');
-        document.getElementById('lowerThirdStage').classList.remove('hidden');
-      }
-    }
-
-    // Fabric Object Selection & Inspector Updates
-    fCanvas.on('selection:created', updateInspector);
-    fCanvas.on('selection:updated', updateInspector);
-    fCanvas.on('selection:cleared', () => {
-      document.getElementById('inspectorTitle').innerText = "No Object Selected";
-      document.getElementById('inspectorType').innerText = "Click canvas item";
-      document.getElementById('textControls').classList.add('hidden');
-      document.getElementById('shapeControls').classList.add('hidden');
-      document.getElementById('imageControls').classList.add('hidden');
-    });
-
-    function updateInspector() {
-      const obj = fCanvas.getActiveObject();
-      if (!obj) return;
-
-      document.getElementById('inspectorTitle').innerText = obj.name || "Selected Layer";
-      document.getElementById('textControls').classList.add('hidden');
-      document.getElementById('shapeControls').classList.add('hidden');
-      document.getElementById('imageControls').classList.add('hidden');
-
-      if (obj.type === 'i-text' || obj.type === 'text') {
-        document.getElementById('inspectorType').innerText = "Live Text";
-        document.getElementById('textControls').classList.remove('hidden');
-        document.getElementById('propTextContent').value = obj.text;
-        document.getElementById('propFontSize').value = obj.fontSize;
-        document.getElementById('propFontFamily').value = obj.fontFamily || "Arial";
-        document.getElementById('propTextColor').value = obj.fill;
-      } else if (obj.type === 'rect') {
-        document.getElementById('inspectorType').innerText = "Vector Block";
-        document.getElementById('shapeControls').classList.remove('hidden');
-        document.getElementById('propShapeFill').value = obj.fill;
-        document.getElementById('propShapeStroke').value = obj.stroke || "#000000";
-        document.getElementById('propShapeRadius').value = obj.rx || 0;
-      } else if (obj.type === 'image') {
-        document.getElementById('inspectorType').innerText = "Graphic / Cutout";
-        document.getElementById('imageControls').classList.remove('hidden');
-      }
-    }
-
-    // Property Event Listeners
-    document.getElementById('propTextContent').addEventListener('input', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type.includes('text')) { obj.set('text', e.target.value); fCanvas.renderAll(); updateLayersUI(); }
-    });
-    document.getElementById('propFontSize').addEventListener('input', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type.includes('text')) { obj.set('fontSize', parseInt(e.target.value, 10)); fCanvas.renderAll(); }
-    });
-    document.getElementById('propFontFamily').addEventListener('change', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type.includes('text')) { obj.set('fontFamily', e.target.value); fCanvas.renderAll(); }
-    });
-    document.getElementById('propTextColor').addEventListener('input', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type.includes('text')) { obj.set('fill', e.target.value); fCanvas.renderAll(); }
-    });
-    document.getElementById('propShapeFill').addEventListener('input', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type === 'rect') { obj.set('fill', e.target.value); fCanvas.renderAll(); }
-    });
-    document.getElementById('propShapeStroke').addEventListener('input', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type === 'rect') { obj.set('stroke', e.target.value); fCanvas.renderAll(); }
-    });
-    document.getElementById('propShapeRadius').addEventListener('input', (e) => {
-      const obj = fCanvas.getActiveObject();
-      if (obj && obj.type === 'rect') {
-        obj.set({ rx: parseInt(e.target.value, 10), ry: parseInt(e.target.value, 10) });
-        fCanvas.renderAll();
-      }
-    });
-
-    // Z-Index Controls
-    document.getElementById('btnBringForward').addEventListener('click', () => {
-      const obj = fCanvas.getActiveObject();
-      if (obj) { fCanvas.bringForward(obj); updateLayersUI(); }
-    });
-    document.getElementById('btnSendBackward').addEventListener('click', () => {
-      const obj = fCanvas.getActiveObject();
-      if (obj) { fCanvas.sendBackwards(obj); updateLayersUI(); }
-    });
-
-    // Local AI Defringe for Selected Image Layer
-    document.getElementById('btnRunAIDefringe').addEventListener('click', async () => {
-      const obj = fCanvas.getActiveObject();
-      if (!obj || obj.type !== 'image') return;
-      document.getElementById('statusText').innerText = "Running local AI neural cutout...";
-
-      const rawB64 = obj.toDataURL();
-      try {
-        const resp = await fetch('/api/ai_segment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: rawB64 })
-        });
-        const res = await resp.json();
-        if (res.success && res.image) {
-          fabric.Image.fromURL(res.image, (newImg) => {
-            newImg.set({
-              left: obj.left,
-              top: obj.top,
-              scaleX: obj.scaleX,
-              scaleY: obj.scaleY,
-              name: (obj.name || "Cutout") + " (AI Clean)"
-            });
-            fCanvas.remove(obj);
-            fCanvas.add(newImg);
-            fCanvas.setActiveObject(newImg);
-            document.getElementById('statusText').innerText = "AI Cutout Complete!";
-            updateLayersUI();
-          });
-        }
-      } catch (err) {
-        alert("Could not reach local AI server. Ensure server.py is running on port 8088.");
-      }
-    });
-
-    // Layers List UI
-    function updateLayersUI() {
-      const container = document.getElementById('layersList');
-      const objects = fCanvas.getObjects();
-      document.getElementById('layerCountBadge').innerText = `${objects.length} Layers`;
-
-      container.innerHTML = '';
-      objects.slice().reverse().forEach((obj) => {
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between p-2.5 rounded-lg bg-[#1c1d24] border border-[#2b2d39] text-xs hover:border-slate-600 transition";
-        row.innerHTML = `
-          <div class="flex items-center gap-2 truncate">
-            <i data-lucide="${obj.type.includes('text') ? 'type' : (obj.type === 'rect' ? 'square' : 'image')}" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-            <span class="truncate font-medium text-slate-200">${obj.name || obj.type}</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button onclick="mountToLowerThird(this)" class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">Make LT</button>
-            <button onclick="deleteLayer(this)" class="text-slate-400 hover:text-red-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-          </div>
-        `;
-        row.onclick = (e) => {
-          if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
-            fCanvas.setActiveObject(obj);
-            fCanvas.renderAll();
-          }
-        };
-        container.appendChild(row);
-      });
-      lucide.createIcons();
-    }
-
-    window.deleteLayer = (btn) => {
-      const idx = Array.from(btn.closest('#layersList').children).indexOf(btn.closest('div'));
-      const obj = fCanvas.getObjects().slice().reverse()[idx];
-      if (obj) { fCanvas.remove(obj); updateLayersUI(); }
-    };
-
-    window.mountToLowerThird = (btn) => {
-      const idx = Array.from(btn.closest('#layersList').children).indexOf(btn.closest('div'));
-      const obj = fCanvas.getObjects().slice().reverse()[idx];
-      if (!obj) return;
-
-      switchTab('lowerthird');
-      const slot = document.getElementById('ltIconSlot');
-      slot.innerHTML = `<img src="${obj.toDataURL()}" class="max-w-full max-h-full object-contain">`;
-      document.getElementById('statusText').innerText = `Mounted ${obj.name} as lower-third badge.`;
-    };
-
-    // Export SVG
-    document.getElementById('btnExportSVG').addEventListener('click', () => {
-      const svg = fCanvas.toSVG();
-      const blob = new Blob([svg], { type: 'image/svg+xml' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Miko_Studio_Slicer_Vector.svg';
-      a.click();
-    });
-
-    // Export PSD
-    document.getElementById('btnExportPSD').addEventListener('click', () => {
-      const objects = fCanvas.getObjects();
-      if (objects.length === 0) return alert('No layers to export. Deconstruct or add elements first.');
-      document.getElementById('statusText').innerText = "Generating multi-layer Photoshop PSD...";
-
-      const psdDoc = {
-        width: 1280,
-        height: 720,
-        children: []
-      };
-
-      objects.forEach((obj, idx) => {
-        if (!obj.visible) return;
-        const b = obj.getBoundingRect();
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = Math.max(1, Math.round(b.width));
-        tempCanvas.height = Math.max(1, Math.round(b.height));
-
-        const tCtx = tempCanvas.getContext('2d');
-        const img = new Image();
-        img.onload = () => {
-          tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
-        };
-        img.src = obj.toDataURL();
-
-        psdDoc.children.push({
-          name: obj.name || `Layer_${idx + 1}`,
-          top: Math.max(0, Math.round(b.top)),
-          left: Math.max(0, Math.round(b.left)),
-          bottom: Math.min(720, Math.round(b.top + b.height)),
-          right: Math.min(1280, Math.round(b.left + b.width)),
-          canvas: tempCanvas,
-          opacity: obj.opacity !== undefined ? obj.opacity : 1
-        });
-      });
-
-      const buffer = agPsd.writePsd(psdDoc);
-      const blob = new Blob([buffer], { type: 'application/octet-stream' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Miko_Studio_Slicer_Master.psd';
-      a.click();
-      document.getElementById('statusText').innerText = "PSD export complete!";
-    });
-
-    // Export 1080p Lower Third PNG
-    document.getElementById('btnExport1080pPNG').addEventListener('click', () => {
-      const outC = document.createElement('canvas');
-      outC.width = 1920;
-      outC.height = 1080;
-      const oCtx = outC.getContext('2d');
-
-      const bannerX = 140;
-      const bannerY = 840;
-      const bannerW = 920;
-      const bannerH = 120;
-
-      oCtx.fillStyle = '#0f172a';
-      oCtx.fillRect(bannerX, bannerY, bannerW, bannerH);
-      oCtx.strokeStyle = '#f59e0b';
-      oCtx.lineWidth = 3;
-      oCtx.strokeRect(bannerX, bannerY, bannerW, bannerH);
-
-      oCtx.fillStyle = '#f59e0b';
-      oCtx.fillRect(bannerX, bannerY - 35, 460, 35);
-      oCtx.fillStyle = '#0f172a';
-      oCtx.font = "900 16px 'Segoe UI', system-ui, sans-serif";
-      oCtx.fillText(document.getElementById('ltRoleDisplay').innerText, bannerX + 25, bannerY - 12);
-
-      oCtx.fillStyle = '#ffffff';
-      oCtx.font = "bold 44px 'Segoe UI', system-ui, sans-serif";
-      oCtx.fillText(document.getElementById('ltNameDisplay').innerText, bannerX + 130, bannerY + 75);
-
-      const imgElem = document.getElementById('ltIconSlot').querySelector('img');
-      if (imgElem) {
-        oCtx.drawImage(imgElem, bannerX + 15, bannerY + 15, 90, 90);
-      }
-
-      const a = document.createElement('a');
-      a.href = outC.toDataURL('image/png');
-      a.download = 'Miko_Studio_LowerThird_1080p.png';
-      a.click();
-    });
-  </script>
-</body>
-</html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Miko Studio Slicer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="vendor/tailwind.js"></script>
+<script src="vendor/fabric.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="vendor/ag-psd.js"></script>
+<script src="vendor/lucide.min.js"></script>
+<style>
+:root{--bg:#121316;--panel:#1a1c21;--line:#2a2d35;--gold:#d4a64a;--txt:#e6e7ea;--dim:#8d919c}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:28px;padding:0 18px;height:52px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{font-weight:700;font-size:17px;letter-spacing:.2px}.brand b{color:var(--gold)}
+.tabbtn{background:none;border:0;color:var(--dim);font:inherit;padding:15px 2px;border-bottom:2px solid transparent;cursor:pointer}
+.tabbtn.on{color:var(--txt);border-color:var(--gold)}
+.tab{display:none;flex:1;min-height:0}.tab.on{display:flex}
+.side{width:230px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.side.r{border-right:0;border-left:1px solid var(--line)}
+.stage{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px}
+.canvas-container{background:conic-gradient(#2a2d35 25%,#23252b 0 50%,#2a2d35 0 75%,#23252b 0) 0 0/20px 20px;box-shadow:0 0 0 1px var(--line)}
+.btn{display:flex;align-items:center;gap:8px;background:#23262d;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.btn:hover{border-color:var(--gold)}.btn.gold{background:var(--gold);color:#121316;border-color:var(--gold);font-weight:600}
+.btn svg{width:16px;height:16px;flex:none}
+input[type=text],input[type=number]{background:#0e0f12;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:7px 8px;font:inherit;font-size:13px;width:100%}
+input[type=color]{width:100%;height:32px;background:none;border:1px solid var(--line);border-radius:6px;padding:2px}
+.lbl{font-size:12px;color:var(--dim)}
+.lyr{padding:6px 8px;border-radius:5px;font-size:13px;cursor:pointer;border:1px solid transparent}
+.lyr:hover{background:#23262d}.lyr.on{border-color:var(--gold);background:#23262d}
+footer{height:30px;display:flex;align-items:center;gap:10px;padding:0 18px;border-top:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--dim)}
+#dot{width:8px;height:8px;border-radius:50%;background:#c0453a}#dot.ok{background:#4fae6b}
+</style></head>
+<body>
+<header>
+  <div class="brand">Miko <b>Studio Slicer</b></div>
+  <nav class="flex gap-6">
+    <button class="tabbtn on" data-t="t1">Pull &amp; Deconstruct</button>
+    <button class="tabbtn" data-t="t2">Photoshop Canvas</button>
+    <button class="tabbtn" data-t="t3">Lower Third Studio</button>
+  </nav>
+</header>
+
+<section id="t1" class="tab on">
+  <div class="side">
+    <label class="btn"><i data-lucide="image-plus"></i>Open image<input id="file" type="file" accept="image/*" hidden></label>
+    <button class="btn" id="sample"><i data-lucide="file-image"></i>Load sample</button>
+    <div class="lbl mt-2">Drag on the image to mark a region. No region uses the whole image.</div>
+    <button class="btn gold" id="cut"><i data-lucide="scissors"></i>Cut region (AI)</button>
+    <button class="btn gold" id="split"><i data-lucide="layers"></i>Auto-split into layers (AI)</button>
+    <button class="btn" id="clr"><i data-lucide="square-dashed"></i>Clear region</button>
+  </div>
+  <div class="stage" id="s1"><canvas id="c1"></canvas></div>
+</section>
+
+<section id="t2" class="tab">
+  <div class="side">
+    <div class="lbl">Fill</div><input type="color" id="col" value="#d4a64a">
+    <div class="lbl">Text size</div><input type="number" id="fs" value="72" min="6" max="600">
+    <button class="btn" id="addText"><i data-lucide="type"></i>Add live text</button>
+    <button class="btn" id="addRect"><i data-lucide="square"></i>Add vector shape</button>
+    <button class="btn" id="up"><i data-lucide="arrow-up"></i>Bring forward</button>
+    <button class="btn" id="down"><i data-lucide="arrow-down"></i>Send backward</button>
+    <button class="btn" id="del"><i data-lucide="trash-2"></i>Delete</button>
+    <button class="btn gold" id="psd2"><i data-lucide="download"></i>Export PSD</button>
+    <button class="btn" id="zip2"><i data-lucide="archive"></i>Export PNG layers (ZIP)</button>
+  </div>
+  <div class="stage" id="s2"><canvas id="c2"></canvas></div>
+  <div class="side r"><div class="lbl">Layers (top first)</div><div id="layers"></div></div>
+</section>
+
+<section id="t3" class="tab">
+  <div class="side">
+    <div class="lbl">Name</div><input type="text" id="nm" value="Miko Tanaka">
+    <div class="lbl">Title</div><input type="text" id="ti" value="Lead Character Artist">
+    <div class="lbl">Accent</div><input type="color" id="acc" value="#d4a64a">
+    <button class="btn gold" id="build"><i data-lucide="rectangle-horizontal"></i>Build nameplate</button>
+    <button class="btn" id="png3"><i data-lucide="image"></i>Export PNG (1920×1080)</button>
+    <button class="btn" id="psd3"><i data-lucide="download"></i>Export PSD</button>
+  </div>
+  <div class="stage" id="s3"><canvas id="c3"></canvas></div>
+</section>
+
+<footer><span id="dot"></span><span id="srv">Server offline</span><span style="margin-left:auto" id="msg">Open an image to begin.</span></footer>
+
+<script>
+const $=s=>document.querySelector(s), msg=t=>$('#msg').textContent=t;
+let src=null, doc={w:1920,h:1080}, seq=0;
+const c1=new fabric.Canvas('c1',{selection:false}),
+      c2=new fabric.Canvas('c2',{preserveObjectStacking:true}),
+      c3=new fabric.Canvas('c3',{preserveObjectStacking:true});
+c1._l={w:1280,h:720};c2._l=doc;c3._l={w:1920,h:1080};
+const stage={c1:'#s1',c2:'#s2',c3:'#s3'};
+function fit(c){const s=$(stage[c.lowerCanvasEl.id]);if(!s.clientWidth)return;
+  const z=Math.min((s.clientWidth-16)/c._l.w,(s.clientHeight-16)/c._l.h,1);
+  c.setZoom(z);c.setDimensions({width:c._l.w*z,height:c._l.h*z});c.requestRenderAll();}
+const fitAll=()=>[c1,c2,c3].forEach(fit);
+addEventListener('resize',fitAll);
+
+/* tabs */
+document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabbtn,.tab').forEach(e=>e.classList.remove('on'));
+  b.classList.add('on');$('#'+b.dataset.t).classList.add('on');fitAll();});
+
+/* tab 1: source + marquee */
+function loadSrc(url){const im=new Image();im.onload=()=>{
+  src=im;doc={w:im.naturalWidth,h:im.naturalHeight};c1._l=doc;c1.clear();sel=null;
+  c1.setBackgroundImage(new fabric.Image(im),()=>{});
+  if(!c2.getObjects().length){c2._l=doc;}
+  fitAll();msg(`Loaded ${doc.w}×${doc.h}.`);};im.src=url;}
+$('#file').onchange=e=>e.target.files[0]&&loadSrc(URL.createObjectURL(e.target.files[0]));
+$('#sample').onclick=()=>loadSrc('sample_concept.png');
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];f&&loadSrc(URL.createObjectURL(f));});
+let sel=null,st=null;
+c1.on('mouse:down',o=>{if(!src)return;st=c1.getPointer(o.e);if(sel)c1.remove(sel);
+  sel=new fabric.Rect({left:st.x,top:st.y,width:0,height:0,fill:'rgba(212,166,74,.15)',stroke:'#d4a64a',strokeWidth:2,strokeUniform:true,strokeDashArray:[8,6],selectable:false,evented:false});c1.add(sel);});
+c1.on('mouse:move',o=>{if(!st)return;const p=c1.getPointer(o.e);
+  sel.set({left:Math.min(p.x,st.x),top:Math.min(p.y,st.y),width:Math.abs(p.x-st.x),height:Math.abs(p.y-st.y)});c1.requestRenderAll();});
+c1.on('mouse:up',()=>{st=null;if(sel&&(sel.width<4||sel.height<4)){c1.remove(sel);sel=null;}});
+$('#clr').onclick=()=>{if(sel)c1.remove(sel);sel=null;};
+function region(){if(!sel)return{x:0,y:0,w:doc.w,h:doc.h};
+  const x=Math.max(0,Math.round(sel.left)),y=Math.max(0,Math.round(sel.top));
+  return{x,y,w:Math.min(doc.w-x,Math.round(sel.width)),h:Math.min(doc.h-y,Math.round(sel.height))};}
+function crop(r){const k=document.createElement('canvas');k.width=r.w;k.height=r.h;
+  k.getContext('2d').drawImage(src,r.x,r.y,r.w,r.h,0,0,r.w,r.h);return k.toDataURL('image/png');}
+async function ai(mode){
+  if(!src)return msg('Open an image first.');
+  const r=region();msg('Segmenting… the first run loads the model.');
+  try{
+    const res=await fetch('/api/ai_segment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:crop(r),mode})});
+    const j=await res.json();if(!res.ok)throw new Error(j.error);
+    if(!j.layers.length)return msg('No foreground found in that region.');
+    if(!c2.getObjects().length){c2._l=doc;}
+    await Promise.all(j.layers.map(l=>new Promise(ok=>fabric.Image.fromURL(l.png,im=>{
+      im.set({left:r.x+l.x,top:r.y+l.y,name:l.name+' '+(++seq)});c2.add(im);ok();}))));
+    fitAll();msg(`${j.layers.length} layer(s) added to Photoshop Canvas.`);
+  }catch(e){msg('AI error: '+e.message);}}
+$('#cut').onclick=()=>ai('cutout');$('#split').onclick=()=>ai('split');
+
+/* tab 2: editing */
+function refresh(){const l=$('#layers');l.innerHTML='';const a=c2.getActiveObject();
+  c2.getObjects().slice().reverse().forEach(o=>{const d=document.createElement('div');
+    d.className='lyr'+(o===a?' on':'');d.textContent=o.name||o.type;
+    d.onclick=()=>{c2.setActiveObject(o);c2.requestRenderAll();};l.appendChild(d);});}
+['object:added','object:removed','object:modified','selection:created','selection:updated','selection:cleared'].forEach(e=>c2.on(e,refresh));
+$('#addText').onclick=()=>{const t=new fabric.IText('Edit text',{left:80,top:80,fontFamily:'Arial',fontSize:+$('#fs').value||72,fill:$('#col').value,name:'Text '+(++seq)});c2.add(t).setActiveObject(t);};
+$('#addRect').onclick=()=>{const r=new fabric.Rect({left:80,top:80,width:400,height:200,fill:$('#col').value,name:'Shape '+(++seq)});c2.add(r).setActiveObject(r);};
+$('#col').oninput=e=>{const o=c2.getActiveObject();if(o&&o.type!=='image'){o.set('fill',e.target.value);c2.requestRenderAll();}};
+$('#fs').oninput=e=>{const o=c2.getActiveObject();if(o&&o.type==='i-text'){o.set('fontSize',+e.target.value||72);c2.requestRenderAll();}};
+const del=()=>{c2.getActiveObjects().forEach(o=>c2.remove(o));c2.discardActiveObject();c2.requestRenderAll();};
+$('#del').onclick=del;
+addEventListener('keydown',e=>{const o=c2.getActiveObject();
+  if(e.key==='Delete'&&$('#t2').classList.contains('on')&&!(o&&o.isEditing)&&document.activeElement.tagName!=='INPUT')del();});
+$('#up').onclick=()=>{const o=c2.getActiveObject();o&&(c2.bringForward(o),refresh());};
+$('#down').onclick=()=>{const o=c2.getActiveObject();o&&(c2.sendBackwards(o),refresh());};
+
+/* export */
+function layerOf(o){const bb=o.getBoundingRect(true,true);
+  const L={name:o.name||o.type,canvas:o.toCanvasElement({enableRetinaScaling:false}),left:Math.round(bb.left),top:Math.round(bb.top)};
+  if(o.type==='i-text'){const [r,g,b]=new fabric.Color(o.fill).getSource();
+    L.text={text:o.text,transform:[1,0,0,1,L.left,L.top+o.fontSize*o.scaleY],style:{font:{name:'ArialMT'},fontSize:o.fontSize*o.scaleY,fillColor:{r,g,b}}};}
+  return L;}
+function layersOf(c){c.discardActiveObject();c.requestRenderAll();return c.getObjects().map(layerOf);}
+function flatten(c,kids){const k=document.createElement('canvas');k.width=c._l.w;k.height=c._l.h;
+  const x=k.getContext('2d');kids.forEach(l=>x.drawImage(l.canvas,l.left,l.top));return k;}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+function exportPSD(c,name){const kids=layersOf(c);if(!kids.length)return msg('Nothing to export.');
+  const psd={width:c._l.w,height:c._l.h,canvas:flatten(c,kids),children:kids};let buf;
+  try{buf=agPsd.writePsd(psd);}catch(e){kids.forEach(k=>delete k.text);buf=agPsd.writePsd(psd);msg('Text layers saved as pixels.');}
+  dl(new Blob([buf],{type:'image/vnd.adobe.photoshop'}),name+'.psd');}
+async function exportZip(c,name){const kids=layersOf(c);if(!kids.length)return msg('Nothing to export.');
+  const z=new JSZip();kids.forEach((l,i)=>z.file(String(i+1).padStart(2,'0')+'_'+l.name.replace(/[^\w-]+/g,'_')+'.png',l.canvas.toDataURL('image/png').split(',')[1],{base64:true}));
+  dl(await z.generateAsync({type:'blob'}),name+'_layers.zip');}
+$('#psd2').onclick=()=>exportPSD(c2,'miko_canvas');
+$('#zip2').onclick=()=>exportZip(c2,'miko_canvas');
+
+/* tab 3: lower third */
+function build3(){c3.clear();const x=120,y=1080-300,h=150,a=$('#acc').value;
+  const n=new fabric.IText($('#nm').value,{left:x+50,top:y+16,fontFamily:'Arial',fontWeight:'bold',fontSize:64,fill:'#ffffff',name:'Name'});
+  const t=new fabric.IText($('#ti').value,{left:x+50,top:y+92,fontFamily:'Arial',fontSize:36,fill:'#cfd2d8',name:'Title'});
+  const w=Math.max(n.width,t.width)+110;
+  c3.add(new fabric.Rect({left:x,top:y,width:w,height:h,fill:'rgba(18,19,22,0.92)',name:'Plate'}),
+         new fabric.Rect({left:x,top:y,width:14,height:h,fill:a,name:'Accent'}),n,t);c3.requestRenderAll();}
+$('#build').onclick=build3;
+$('#png3').onclick=()=>{const k=layersOf(c3);if(!k.length)return msg('Build a nameplate first.');flatten(c3,k).toBlob(b=>dl(b,'lower_third.png'));};
+$('#psd3').onclick=()=>exportPSD(c3,'lower_third');
+build3();
+
+/* boot */
+lucide.createIcons();
+fetch('/health').then(r=>r.json()).then(j=>{if(j.app==='Miko Studio Slicer'){$('#dot').classList.add('ok');$('#srv').textContent='Server online';}}).catch(()=>{});
+</script>
+</body></html>

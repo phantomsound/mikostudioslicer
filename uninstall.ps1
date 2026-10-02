@@ -1,21 +1,13 @@
-﻿$targetDir = Join-Path $env:LOCALAPPDATA "MikoStudioSlicer"
-
-# 1. Stop background python processes running from MikoStudioSlicer
-Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe' or Name = 'python.exe'" | Where-Object { $_.CommandLine -like "*MikoStudioSlicer*" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
-
-# 2. Remove Startup Registry Entry
-Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "MikoStudioSlicerService" -ErrorAction SilentlyContinue
-
-# 3. Remove Desktop & Start Menu Shortcuts
-$desktopLnk = Join-Path ([System.Environment]::GetFolderPath("Desktop")) "MikoStudioSlicer.lnk"
-if (Test-Path $desktopLnk) { Remove-Item $desktopLnk -Force }
-
-$smDir = Join-Path ([System.Environment]::GetFolderPath("StartMenu")) "Programs\MikoStudioSlicer"
-if (Test-Path $smDir) { Remove-Item $smDir -Recurse -Force }
-
-# 4. Remove Files
-if (Test-Path $targetDir) {
-    Remove-Item $targetDir -Recurse -Force
-}
-
-Write-Host "[OK] MikoStudioSlicer has been cleanly removed." -ForegroundColor Green
+$App = 'Miko Studio Slicer';
+$Dest = Join-Path ${env:ProgramFiles(x86)} $App;
+$me = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent();
+if (-not $me.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"";
+    exit;
+};
+Get-CimInstance Win32_Process -Filter "Name='pythonw.exe'" | Where-Object { $_.CommandLine -like '*Miko Studio Slicer*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; };
+foreach ($d in @([Environment]::GetFolderPath('CommonDesktopDirectory'),[Environment]::GetFolderPath('CommonPrograms'))) {
+    Remove-Item (Join-Path $d "$App.lnk") -Force -ErrorAction SilentlyContinue;
+};
+Remove-Item (Join-Path $env:TEMP 'MikoStudioSlicer.port') -Force -ErrorAction SilentlyContinue;
+Start-Process cmd.exe -ArgumentList "/c timeout /t 2 /nobreak >nul & rmdir /s /q `"$Dest`"" -WindowStyle Hidden;

@@ -1,63 +1,23 @@
-﻿#target illustrator
-
-function buildMikoStudioWorkspace() {
-    var doc = app.documents.add(DocumentColorSpace.RGB, 1920, 1080);
-    
-    // 1. Core Miko Studio Slicer Brand Swatches
-    var brandColors = [
-        {name: "MSS Gold / Primary", r: 245, g: 158, b: 11},
-        {name: "MSS Cyan / Accent", r: 6, g: 182, b: 212},
-        {name: "MSS Violet / Show", r: 99, g: 102, b: 241},
-        {name: "MSS Crimson / Bevel", r: 239, g: 68, b: 68},
-        {name: "MSS Obsidian / Base", r: 15, g: 23, b: 42},
-        {name: "MSS White / Neutral", r: 248, g: 250, b: 252}
-    ];
-    
-    for (var i = 0; i < brandColors.length; i++) {
-        var rgb = new RGBColor();
-        rgb.red = brandColors[i].r;
-        rgb.green = brandColors[i].g;
-        rgb.blue = brandColors[i].b;
-        
-        var sw = doc.swatches.add();
-        sw.name = brandColors[i].name;
-        sw.color = rgb;
+// Miko Studio Slicer: Illustrator workspace builder (ExtendScript)
+#target illustrator
+(function () {
+    var W = 1920, H = 1080;
+    var d = app.documents.add(DocumentColorSpace.RGB, W, H);
+    d.rulerUnits = RulerUnits.Pixels;
+    var names = ["Guides", "Text", "Shapes", "Cutouts", "Source"];
+    for (var i = 0; i < names.length; i++) {
+        var l = (i === 0) ? d.layers[0] : d.layers.add();
+        l.name = names[i];
     }
-
-    // 2. Structured Production Layers
-    var layers = [
-        "05_OVERLAYS_TEXT",
-        "04_LOWER_THIRDS",
-        "03_BRAND_MARKS_VECTORS",
-        "02_BACKGROUND_ELEMENTS",
-        "01_RAW_CONCEPT_REFERENCE"
-    ];
-    
-    for (var j = 0; j < layers.length; j++) {
-        var l = doc.layers.add();
-        l.name = layers[j];
+    var g = d.layers.getByName("Guides");
+    function guide(x, y, w, h) {
+        var r = g.pathItems.rectangle(-y, x, w, h);
+        r.filled = false; r.stroked = false; r.guides = true;
     }
-    
-    // 3. Lower Third Geometric Vector Baseplates
-    var lowerThirdLayer = doc.layers.getByName("04_LOWER_THIRDS");
-    var baseColor = doc.swatches.getByName("MSS Obsidian / Base").color;
-    var gold = doc.swatches.getByName("MSS Gold / Primary").color;
-    var cyan = doc.swatches.getByName("MSS Cyan / Accent").color;
-    
-    // Baseplate: 720px wide x 95px tall
-    var mainBar = lowerThirdLayer.pathItems.rectangle(820, 140, 720, 95);
-    mainBar.fillColor = baseColor;
-    mainBar.stroked = false;
-    
-    // Gold Role Strip: 340px wide x 35px tall
-    var roleBar = lowerThirdLayer.pathItems.rectangle(855, 140, 340, 35);
-    roleBar.fillColor = gold;
-    roleBar.stroked = false;
-
-    // Cyan underline
-    var cyanLine = lowerThirdLayer.pathItems.rectangle(725, 140, 720, 4);
-    cyanLine.fillColor = cyan;
-    cyanLine.stroked = false;
-}
-
-buildMikoStudioWorkspace();
+    guide(0, 0, W, H);
+    guide(W * 0.05, H * 0.05, W * 0.9, H * 0.9);
+    guide(W * 0.1, H * 0.1, W * 0.8, H * 0.8);
+    g.locked = true;
+    d.layers.getByName("Source").locked = false;
+    alert("Miko Studio Slicer workspace ready: " + W + " x " + H + " with action-safe and title-safe guides.");
+})();

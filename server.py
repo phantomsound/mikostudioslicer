@@ -1,157 +1,129 @@
-﻿import http.server
-import socketserver
-import socket
-import os
-import sys
-import json
-import base64
-import io
-import tempfile
-import webbrowser
-import urllib.request
-from PIL import Image
+import argparse, base64, io, json, os, sys, tempfile, threading, urllib.request, webbrowser
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-DIRECTORY = os.path.dirname(os.path.abspath(__file__))
-PORT_FILE = os.path.join(tempfile.gettempdir(), "mikostudioslicer.port")
-START_PORT = 8088
-MAX_PORT = 8138
+APP = "Miko Studio Slicer"
+ROOT = os.path.dirname(os.path.abspath(__file__))
+os.environ.setdefault("U2NET_HOME", os.path.join(ROOT, "models"))
+PORT_FILE = os.path.join(tempfile.gettempdir(), "MikoStudioSlicer.port")
+LO, HI = 8088, 8138
+_sess, _lock = None, threading.Lock()
 
-# Lazy-load rembg to keep server startup instantaneous
-_rembg_session = None
 
-def get_rembg_session():
-    global _rembg_session
-    if _rembg_session is None:
-        try:
+def session():
+    global _sess
+    with _lock:
+        if _sess is None:
             from rembg import new_session
-            _rembg_session = new_session("u2net")
-        except Exception as e:
-            print(f"[WARN] rembg could not be initialized: {e}")
-            _rembg_session = False
-    return _rembg_session
+            _sess = new_session("u2net")
+    return _sess
 
-def is_our_service(port):
-    try:
-        url = f"http://127.0.0.1:{port}/health"
-        req = urllib.request.Request(url, headers={"User-Agent": "MikoProbe"})
-        with urllib.request.urlopen(req, timeout=0.6) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data.get("app") == "MikoStudioSlicer"
-    except Exception:
-        return False
 
-def is_port_in_use(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind(("127.0.0.1", port))
-            return False
-        except OSError:
-            return True
+def png_url(im):
+    b = io.BytesIO()
+    im.save(b, "PNG")
+    return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
 
-def get_target_port():
-    if os.path.exists(PORT_FILE):
-        try:
-            with open(PORT_FILE, "r") as f:
-                saved_port = int(f.read().strip())
-            if is_our_service(saved_port):
-                return saved_port, True
-        except Exception:
-            pass
 
-    for p in range(START_PORT, MAX_PORT):
-        if is_our_service(p):
-            return p, True
-        if not is_port_in_use(p):
-            return p, False
+def segment(data_url, mode):
+    import numpy as np
+    from PIL import Image
+    from rembg import remove
+    from scipy import ndimage as ndi
+    img = Image.open(io.BytesIO(base64.b64decode(data_url.split(",", 1)[-1]))).convert("RGBA")
+    out = remove(img, session=session()).convert("RGBA")
+    arr = np.array(out)
+    mask = arr[..., 3] > 8
+    if not mask.any():
+        return []
+    if mode == "split":
+        grow = max(2, min(img.size) // 120)
+        lab, n = ndi.label(ndi.binary_dilation(mask, iterations=grow))
+        comps = [(lab == i) & mask for i in range(1, n + 1)]
+        floor = mask.size * 0.0005
+        comps = sorted((c for c in comps if c.sum() >= floor), key=lambda c: -c.sum())[:64]
+    else:
+        comps = [mask]
+    layers = []
+    for i, c in enumerate(comps, 1):
+        ys, xs = np.where(c)
+        x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+        piece = arr.copy()
+        piece[~c] = 0
+        crop = Image.fromarray(piece[y0:y1, x0:x1], "RGBA")
+        layers.append({"name": f"{'Piece' if mode == 'split' else 'Cutout'} {i}",
+                       "png": png_url(crop), "x": int(x0), "y": int(y0), "w": int(x1 - x0), "h": int(y1 - y0)})
+    return layers
 
-    raise RuntimeError(f"No available ports between {START_PORT} and {MAX_PORT}")
 
-class SlicerHandler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=DIRECTORY, **kwargs)
+class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *a, **k):
+        super().__init__(*a, directory=ROOT, **k)
+
+    def log_message(self, *a):
+        pass
+
+    def send_json(self, obj, code=200):
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_GET(self):
-        if self.path == "/health":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"app": "MikoStudioSlicer", "status": "online", "ai_ready": True}).encode("utf-8"))
-            return
+        if self.path.split("?")[0] == "/health":
+            return self.send_json({"app": APP, "status": "online"})
         super().do_GET()
 
     def do_POST(self):
-        if self.path == "/api/ai_segment":
-            try:
-                content_len = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(content_len)
-                req_data = json.loads(body.decode("utf-8"))
-                
-                # Base64 in -> AI alpha cutout -> Base64 out
-                raw_b64 = req_data["image"].split(",")[-1]
-                img_bytes = base64.b64decode(raw_b64)
-                src_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+        if self.path.split("?")[0] != "/api/ai_segment":
+            return self.send_json({"error": "not found"}, 404)
+        try:
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            mode = body.get("mode", "cutout")
+            self.send_json({"layers": segment(body["image"], "split" if mode == "split" else "cutout")})
+        except Exception as e:
+            self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
 
-                session = get_rembg_session()
-                if session:
-                    from rembg import remove
-                    out_img = remove(
-                        src_img,
-                        session=session,
-                        alpha_matting=True,
-                        alpha_matting_foreground_threshold=240,
-                        alpha_matting_background_threshold=15,
-                        alpha_matting_erode_size=4
-                    )
-                else:
-                    out_img = src_img
 
-                out_buffer = io.BytesIO()
-                out_img.save(out_buffer, format="PNG")
-                result_b64 = "data:image/png;base64," + base64.b64encode(out_buffer.getvalue()).decode("utf-8")
+def probe(port):
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=0.4) as r:
+            return json.load(r).get("app") == APP
+    except Exception:
+        return False
 
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"success": True, "image": result_b64}).encode("utf-8"))
-            except Exception as e:
-                self.send_response(500)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
-            return
-        super().do_POST()
-
-    def log_message(self, format, *args):
-        pass
 
 def main():
-    os.chdir(DIRECTORY)
-    port, already_running = get_target_port()
-
-    if already_running:
-        if "--launch" in sys.argv:
-            webbrowser.open(f"http://localhost:{port}")
-        sys.exit(0)
-
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--launch", action="store_true")
+    args = ap.parse_args()
+    srv = None
+    for port in range(LO, HI + 1):
+        if probe(port):
+            if args.launch:
+                webbrowser.open(f"http://127.0.0.1:{port}/")
+            return
+        try:
+            srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+            break
+        except OSError:
+            continue
+    if srv is None:
+        sys.exit(1)
+    with open(PORT_FILE, "w") as f:
+        f.write(str(port))
+    threading.Thread(target=session, daemon=True).start()
+    if args.launch:
+        threading.Timer(0.6, webbrowser.open, [f"http://127.0.0.1:{port}/"]).start()
     try:
-        with open(PORT_FILE, "w") as f:
-            f.write(str(port))
-    except Exception:
-        pass
-
-    if "--launch" in sys.argv:
-        webbrowser.open(f"http://localhost:{port}")
-
-    socketserver.TCPServer.allow_reuse_address = True
-    try:
-        with socketserver.TCPServer(("127.0.0.1", port), SlicerHandler) as httpd:
-            httpd.serve_forever()
+        srv.serve_forever()
     finally:
-        if os.path.exists(PORT_FILE):
-            try:
-                os.remove(PORT_FILE)
-            except Exception:
-                pass
+        try:
+            os.remove(PORT_FILE)
+        except OSError:
+            pass
+
 
 if __name__ == "__main__":
     main()
