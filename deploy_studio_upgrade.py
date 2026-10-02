@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+﻿import os
+import shutil
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+INSTALL_DIR = r"C:\Program Files (x86)\Miko Studio Slicer"
+
+html_code = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -915,3 +921,14 @@
   </script>
 </body>
 </html>
+"""
+
+with open(os.path.join(APP_DIR, "index.html"), "w", encoding="utf-8") as f:
+    f.write(html_code)
+print("[+] index.html upgraded with assembled vector grouping, shortcuts, shapes, and project engine.")
+
+if os.path.exists(INSTALL_DIR):
+    shutil.copy2(os.path.join(APP_DIR, "index.html"), os.path.join(INSTALL_DIR, "index.html"))
+    print("[+] Synchronized index.html to Program Files (x86) directory.")
+
+print("\n[SUCCESS] Miko Studio Slicer frontend upgrade complete!")
