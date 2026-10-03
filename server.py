@@ -71,19 +71,55 @@ def segment(data_url, mode):
 #  with smart pre-trace enhancement pipeline
 # ---------------------------------------------------------------------------
 
-def _preprocess_for_vectorization(pil_img, num_colors=12):
+def _sample_border_color(pil_img):
+    """Sample the dominant/median border background color of the image.
+    Returns (R, G, B) tuple or None if the border is predominantly transparent.
+    """
+    import numpy as np
+    arr = np.array(pil_img)
+    if arr.ndim != 3 or arr.shape[0] < 4 or arr.shape[1] < 4:
+        return None
+
+    top = arr[:2, :, :]
+    bottom = arr[-2:, :, :]
+    left = arr[:, :2, :]
+    right = arr[:, -2:, :]
+
+    border = np.concatenate([
+        top.reshape(-1, arr.shape[2]),
+        bottom.reshape(-1, arr.shape[2]),
+        left.reshape(-1, arr.shape[2]),
+        right.reshape(-1, arr.shape[2])
+    ], axis=0)
+
+    if arr.shape[2] == 4:
+        alpha = border[:, 3]
+        opaque = border[alpha > 40]
+        if len(opaque) < 0.20 * len(border):
+            return None
+        border_rgb = opaque[:, :3]
+    else:
+        border_rgb = border[:, :3]
+
+    med = np.median(border_rgb, axis=0).astype(int)
+    return (int(med[0]), int(med[1]), int(med[2]))
+
+
+def _preprocess_for_vectorization(pil_img, num_colors=12, bg_color=None):
     """Cleanse raster artwork into solid, crisp colour regions before tracing.
 
     Pipeline stages:
       A. Neural background cutout  (rembg / u2net)
-      B. Hard binary alpha          → eliminates soft edge fringes
+      B. Hard binary alpha          → eliminates soft edge fringes; purges enclosed bg cavity
       C. Median surface flattening  → removes anti-alias noise
-      D. Colour quantization        → collapses gradients to solid swatches
+      D. Perceptual saturation-weighted K-Means → preserves vibrant swatches against dark fringe
       E. Re-apply clean alpha mask
     """
     import numpy as np
     from PIL import Image as PILImage, ImageFilter
     from rembg import remove
+    import scipy.cluster.vq as vq
+    import warnings
 
     if pil_img.mode != "RGBA":
         pil_img = pil_img.convert("RGBA")
@@ -99,35 +135,159 @@ def _preprocess_for_vectorization(pil_img, num_colors=12):
     # --- B: Hard binarise alpha (>140 → opaque, else transparent) ---
     alpha_np = np.array(a)
     binary_alpha = np.where(alpha_np > 140, 255, 0).astype(np.uint8)
-    a_clean = PILImage.fromarray(binary_alpha, mode="L")
 
+    # Purge interior cavities matching sampled border background color
+    if bg_color is not None:
+        raw_rgb = np.array(PILImage.merge("RGB", (r, g, b)), dtype=np.float32)
+        dist_bg = np.sqrt(np.sum((raw_rgb - np.array(bg_color, dtype=np.float32)) ** 2, axis=2))
+        binary_alpha[dist_bg < 18] = 0
+
+    a_clean = PILImage.fromarray(binary_alpha, mode="L")
     clean_rgb = PILImage.merge("RGB", (r, g, b))
 
     # --- C: Median filter – smooths micro-noise & AA artefacts ---
     smoothed = clean_rgb.filter(ImageFilter.MedianFilter(size=3))
+    smoothed_np = np.array(smoothed)
+    mask = binary_alpha > 0
 
-    # --- D: Colour quantisation – solid brand swatches, no dithering ---
-    quantized = smoothed.quantize(
-        colors=num_colors,
-        method=PILImage.Quantize.MEDIANCUT,
-        dither=PILImage.Dither.NONE,
-    )
-    quantized_rgb = quantized.convert("RGB")
+    # --- D: Perceptual saturation-weighted K-Means clustering ---
+    opaque_pixels = smoothed_np[mask].astype(np.float32)
+    if len(opaque_pixels) > 0:
+        unique_pixels = np.unique(opaque_pixels, axis=0)
+        actual_k = max(1, min(int(num_colors), len(unique_pixels)))
+        if len(opaque_pixels) > 30000:
+            sample_idx = np.random.choice(len(opaque_pixels), 30000, replace=False)
+            sample = opaque_pixels[sample_idx]
+        else:
+            sample = opaque_pixels
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            centroids, _ = vq.kmeans2(sample, actual_k, minit="points", iter=15)
+            labels, _ = vq.vq(opaque_pixels, centroids)
+
+        # For every quantized cluster, weight centroid toward higher saturation
+        max_c = np.max(opaque_pixels, axis=1)
+        min_c = np.min(opaque_pixels, axis=1)
+        sat = np.where(max_c > 0, (max_c - min_c) / np.maximum(max_c, 1e-5), 0.0)
+        val = max_c / 255.0
+        w = ((sat + 0.05) ** 2) * (val + 0.05)
+
+        for k in range(actual_k):
+            m = (labels == k)
+            if m.any():
+                w_sum = np.sum(w[m])
+                if w_sum > 0:
+                    centroids[k] = np.sum(opaque_pixels[m] * w[m, None], axis=0) / w_sum
+                else:
+                    centroids[k] = np.mean(opaque_pixels[m], axis=0)
+
+        quantized_opaque = centroids[labels].clip(0, 255).astype(np.uint8)
+        out_rgb = smoothed_np.copy()
+        out_rgb[mask] = quantized_opaque
+        quantized_rgb = PILImage.fromarray(out_rgb, mode="RGB")
+    else:
+        quantized_rgb = smoothed
 
     # --- E: Re-apply clean binary alpha ---
     r_q, g_q, b_q = quantized_rgb.split()
     return PILImage.merge("RGBA", (r_q, g_q, b_q, a_clean))
 
 
-def vectorize(data_url):
+
+VECTORIZE_PRESETS = {
+    # Flat geometric brand marks and icons
+    "logo": {
+        "colors": 8,
+        "vtracer": dict(colormode="color", hierarchical="stacked", filter_speckle=20,
+                        color_precision=6, layer_difference=20, corner_threshold=60),
+    },
+    # Cartoon artwork, badges, detailed mascots
+    "illustration": {
+        "colors": 16,
+        "vtracer": dict(colormode="color", hierarchical="stacked", filter_speckle=10,
+                        color_precision=8, layer_difference=12, corner_threshold=45),
+    },
+    # Single-colour stamps, typography, ink marks (strict 2-colour mask)
+    "silhouette": {
+        "colors": 2,
+        "vtracer": dict(colormode="binary", hierarchical="cutout", filter_speckle=16),
+    },
+}
+DEFAULT_PRESET = "logo"
+_PRESET_ALIASES = {"stamp": "silhouette", "ink": "silhouette", "stamp_ink": "silhouette"}
+
+
+def _otsu_threshold(gray_np):
+    """Otsu's method on a uint8 grayscale array -> threshold in [0, 255]."""
+    import numpy as np
+    hist = np.bincount(gray_np.ravel(), minlength=256).astype(np.float64)
+    total = hist.sum()
+    sum_all = (np.arange(256) * hist).sum()
+    w_b = sum_b = 0.0
+    best_t, best_var = 127, -1.0
+    for t in range(256):
+        w_b += hist[t]
+        if w_b == 0:
+            continue
+        w_f = total - w_b
+        if w_f == 0:
+            break
+        sum_b += t * hist[t]
+        m_b, m_f = sum_b / w_b, (sum_all - sum_b) / w_f
+        var = w_b * w_f * (m_b - m_f) ** 2
+        if var > best_var:
+            best_var, best_t = var, t
+    return best_t
+
+
+def _binary_mask_for_vectorization(pil_img):
+    """Strict 2-colour mask: solid black ink on opaque white, no greys.
+
+    Ink is whichever side of the Otsu split is NOT the border/background
+    colour; images that already carry transparency use their alpha as ink.
+    """
+    import numpy as np
+    from PIL import Image as PILImage
+
+    rgba = np.array(pil_img.convert("RGBA"))
+    alpha = rgba[..., 3]
+    if (alpha < 128).mean() > 0.05:
+        ink = alpha >= 128
+    else:
+        gray = np.array(pil_img.convert("L"))
+        t = _otsu_threshold(gray)
+        dark = gray <= t
+        border = np.concatenate([dark[0, :], dark[-1, :], dark[:, 0], dark[:, -1]])
+        bg_is_dark = border.mean() > 0.5
+        ink = ~dark if bg_is_dark else dark
+    out = np.where(ink, 0, 255).astype(np.uint8)
+    return PILImage.fromarray(out, mode="L").convert("RGB")
+
+
+def _resolve_preset(preset):
+    key = str(preset or DEFAULT_PRESET).strip().lower()
+    key = _PRESET_ALIASES.get(key, key)
+    return key if key in VECTORIZE_PRESETS else DEFAULT_PRESET
+
+
+def vectorize(data_url, preset=DEFAULT_PRESET):
     """Decompose a raster image into clean SVG paths via the pre-trace
-    enhancement pipeline + vtracer."""
+    enhancement pipeline + vtracer, tuned by ``preset``
+    ("logo" | "illustration" | "silhouette")."""
     import vtracer
 
-    img = _decode_image(data_url)
+    preset = _resolve_preset(preset)
+    cfg = VECTORIZE_PRESETS[preset]
 
-    # Run the full cleansing pipeline before tracing
-    preprocessed = _preprocess_for_vectorization(img)
+    img = _decode_image(data_url)
+    bg_color = _sample_border_color(img)
+
+    # Run the preset-specific cleansing pipeline before tracing
+    if preset == "silhouette":
+        preprocessed = _binary_mask_for_vectorization(img)
+    else:
+        preprocessed = _preprocess_for_vectorization(img, num_colors=cfg["colors"], bg_color=bg_color)
 
     # vtracer requires both an input image path AND an output SVG path
     fd_in, in_path = tempfile.mkstemp(suffix=".png")
@@ -136,21 +296,15 @@ def vectorize(data_url):
         os.close(fd_in)
         os.close(fd_out)
         preprocessed.save(in_path, "PNG")
-        vtracer.convert_image_to_svg_py(
-            in_path,
-            out_path,
-            colormode="color",
-            hierarchical="stacked",
+        params = dict(
             mode="spline",
-            filter_speckle=16,
-            color_precision=6,
-            layer_difference=20,
-            corner_threshold=60,
             length_threshold=4.0,
             max_iterations=10,
             splice_threshold=45,
             path_precision=3,
         )
+        params.update(cfg["vtracer"])
+        vtracer.convert_image_to_svg_py(in_path, out_path, **params)
         with open(out_path, "r", encoding="utf-8") as f:
             svg_str = f.read()
     finally:
@@ -159,19 +313,368 @@ def vectorize(data_url):
                 os.unlink(p)
             except OSError:
                 pass
+    # --- Post-process: prune micro-artifacts, purge enclosed bg color, suppress black slivers & depth-sort ---
+    svg_str = _prune_and_sort_svg(svg_str, bg_color=bg_color)
 
     return {"success": True, "svg": svg_str}
 
 
+_SVG_NS = "http://www.w3.org/2000/svg"
+_PATH_TOKEN = None
+
+
+def _svg_path_bbox(d_attr):
+    """True bounding box (x, y, w, h) of an SVG path 'd' string.
+
+    Walks real path commands (M/L/H/V/C/S/Q/T/A/Z, absolute and relative) so
+    that relative coordinates and single-axis commands are handled correctly.
+    Curve control points are included (conservative hull).
+    """
+    import re
+    global _PATH_TOKEN
+    if _PATH_TOKEN is None:
+        _PATH_TOKEN = re.compile(r"([MmLlHhVvCcSsQqTtAaZz])|([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)")
+    arity = {"M": 2, "L": 2, "H": 1, "V": 1, "C": 6, "S": 4, "Q": 4, "T": 2, "A": 7, "Z": 0}
+
+    tokens = _PATH_TOKEN.findall(d_attr or "")
+    xs, ys = [], []
+    cx = cy = sx = sy = 0.0
+    cmd, args, i = None, [], 0
+
+    def emit(x, y):
+        xs.append(x)
+        ys.append(y)
+
+    while i < len(tokens):
+        letter, num = tokens[i]
+        i += 1
+        if letter:
+            cmd = letter
+            if cmd in "Zz":
+                cx, cy = sx, sy
+                cmd = None
+            args = []
+            continue
+        if cmd is None:
+            continue
+        args.append(float(num))
+        up = cmd.upper()
+        if len(args) < arity[up]:
+            continue
+        rel = cmd.islower()
+        ox, oy = (cx, cy) if rel else (0.0, 0.0)
+        if up == "M":
+            cx, cy = ox + args[0], oy + args[1]
+            sx, sy = cx, cy
+            emit(cx, cy)
+            cmd = "l" if rel else "L"  # implicit lineto after moveto
+        elif up == "L" or up == "T":
+            cx, cy = ox + args[0], oy + args[1]
+            emit(cx, cy)
+        elif up == "H":
+            cx = (cx if rel else 0.0) + args[0]
+            emit(cx, cy)
+        elif up == "V":
+            cy = (cy if rel else 0.0) + args[0]
+            emit(cx, cy)
+        elif up == "C":
+            emit(ox + args[0], oy + args[1])
+            emit(ox + args[2], oy + args[3])
+            cx, cy = ox + args[4], oy + args[5]
+            emit(cx, cy)
+        elif up in ("S", "Q"):
+            emit(ox + args[0], oy + args[1])
+            cx, cy = ox + args[2], oy + args[3]
+            emit(cx, cy)
+        elif up == "A":
+            cx, cy = ox + args[5], oy + args[6]
+            emit(cx, cy)
+        args = []
+
+    if not xs:
+        return (0.0, 0.0, 0.0, 0.0)
+    return (min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
+
+
+def _prune_and_sort_svg(svg_str, min_area=25, min_thickness=2.0, bg_color=None):
+    """Post-process vtracer output.
+
+    1. Prune micro-artifacts: paths whose bounding-box area < ``min_area`` px²
+       and hairline strips (bbox thinner than ``min_thickness`` px on either
+       axis) such as 1-px crop-edge aliasing lines.
+    2. Purge enclosed background paths: discard any path whose fill matches
+       ``bg_color`` (Euclidean RGB distance < 18) so negative space inside
+       geometry (like the cream hexagon interior in ZKV designs) stays 100% transparent.
+    3. Black sliver suppression: drop paths with fill #000000 or #010101 having area < 0.8%
+       of the total bounding box area (removes crop-edge AA flecks).
+    4. Depth-sort the survivors by bounding-box area, descending, so large
+       background / extruded-shadow shapes sit at the bottom of the stack and
+       small detail shapes (teeth, highlights, eyes) end up on top.
+    """
+    import xml.etree.ElementTree as ET
+    import re
+
+    ET.register_namespace("", _SVG_NS)
+    root = ET.fromstring(svg_str)
+
+    def is_path(el):
+        return isinstance(el.tag, str) and el.tag.split("}")[-1] == "path"
+
+    def parse_path_color(el):
+        f = el.get("fill", "")
+        if not f:
+            style = el.get("style", "")
+            m = re.search(r"fill\s*:\s*([^;]+)", style)
+            if m:
+                f = m.group(1).strip()
+        if not f or f.lower() == "none":
+            return None
+        f = f.strip()
+        if f.startswith("#"):
+            if len(f) == 7:
+                try:
+                    return (int(f[1:3], 16), int(f[3:5], 16), int(f[5:7], 16))
+                except ValueError:
+                    return None
+            elif len(f) == 4:
+                try:
+                    return (int(f[1] * 2, 16), int(f[2] * 2, 16), int(f[3] * 2, 16))
+                except ValueError:
+                    return None
+        elif f.startswith("rgb"):
+            m = re.search(r"rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)", f)
+            if m:
+                return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        return None
+
+    # Collect every <path> together with its parent
+    entries = []
+    for parent in root.iter():
+        for child in list(parent):
+            if is_path(child):
+                entries.append((parent, child))
+    if not entries:
+        return svg_str
+
+    candidates = []
+    for parent, p in entries:
+        d = p.get("d", "")
+        if not d:
+            continue
+        bx, by, w, h = _svg_path_bbox(d)
+        area = w * h
+        if area < min_area or min(w, h) < min_thickness:
+            continue
+
+        clr = parse_path_color(p)
+
+        # 2. Purge enclosed background paths matching sampled border color
+        if bg_color is not None and clr is not None:
+            dist = ((clr[0] - bg_color[0]) ** 2 + (clr[1] - bg_color[1]) ** 2 + (clr[2] - bg_color[2]) ** 2) ** 0.5
+            if dist < 18.0:
+                continue
+
+        # Extract translation if present
+        trans = p.get("transform", "")
+        tx, ty = 0.0, 0.0
+        if trans:
+            m = re.search(r"translate\(\s*([-+]?\d*\.?\d+)(?:[,\s]+([-+]?\d*\.?\d+))?\s*\)", trans)
+            if m:
+                tx = float(m.group(1))
+                ty = float(m.group(2)) if m.group(2) else 0.0
+
+        candidates.append({
+            "path": p,
+            "x": bx + tx,
+            "y": by + ty,
+            "w": w,
+            "h": h,
+            "area": area,
+            "clr": clr
+        })
+
+    for parent, p in entries:
+        parent.remove(p)
+
+    if not candidates:
+        return ET.tostring(root, encoding="unicode")
+
+    # Union bounding box across all candidates
+    min_x = min(c["x"] for c in candidates)
+    min_y = min(c["y"] for c in candidates)
+    max_x = max(c["x"] + c["w"] for c in candidates)
+    max_y = max(c["y"] + c["h"] for c in candidates)
+    total_bbox_area = max(1.0, (max_x - min_x) * (max_y - min_y))
+
+    # 3. Black sliver suppression (< 0.8% of total bounds area) & scoring
+    scored = []
+    for c in candidates:
+        clr = c["clr"]
+        area = c["area"]
+        if clr is not None and clr[0] <= 2 and clr[1] <= 2 and clr[2] <= 2:
+            if area < (0.008 * total_bbox_area):
+                continue
+        scored.append((area, c["path"]))
+
+    if not scored:
+        return ET.tostring(root, encoding="unicode")
+
+    # 4. Depth sort: largest first (bottom of z-order), smallest last (top)
+    scored.sort(key=lambda t: -t[0])
+    for _, p in scored:
+        root.append(p)
+
+    return ET.tostring(root, encoding="unicode")
+
+
 # ---------------------------------------------------------------------------
-#  /api/ocr  –  Optical character recognition (pytesseract)
+#  /api/extract_palette  –  Dominant Brand Palette Extractor
+# ---------------------------------------------------------------------------
+
+def extract_palette(data_url):
+    """Extract 6-8 dominant brand colors sorted by visual weight and saturation."""
+    import numpy as np
+    import scipy.cluster.vq as vq
+    import warnings
+
+    img = _decode_image(data_url)
+    arr = np.array(img)
+    if arr.ndim != 3 or arr.shape[0] == 0 or arr.shape[1] == 0:
+        return {"success": False, "palette": []}
+
+    mask = arr[..., 3] > 40 if arr.shape[2] == 4 else np.ones(arr.shape[:2], bool)
+    pixels = arr[..., :3][mask].astype(np.float32)
+
+    if len(pixels) == 0:
+        return {"success": True, "palette": ["#000000"]}
+
+    if len(pixels) > 30000:
+        idx = np.random.choice(len(pixels), 30000, replace=False)
+        sample = pixels[idx]
+    else:
+        sample = pixels
+
+    unique_pixels = np.unique(sample, axis=0)
+    actual_k = max(1, min(8, len(unique_pixels)))
+
+    if actual_k == 1:
+        c = sample.mean(axis=0).astype(int)
+        return {"success": True, "palette": [f"#{c[0]:02X}{c[1]:02X}{c[2]:02X}"]}
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        centroids, _ = vq.kmeans2(sample, actual_k, minit="points", iter=15)
+        labels, _ = vq.vq(sample, centroids)
+
+    # For each cluster, compute saturation-weighted centroid and visual score
+    clusters = []
+    max_c = np.max(sample, axis=1)
+    min_c = np.min(sample, axis=1)
+    sat = np.where(max_c > 0, (max_c - min_c) / np.maximum(max_c, 1e-5), 0.0)
+    val = max_c / 255.0
+    w = ((sat + 0.05) ** 2) * (val + 0.05)
+
+    for i in range(actual_k):
+        m = (labels == i)
+        cnt = int(np.sum(m))
+        if cnt == 0:
+            continue
+        c = np.sum(sample[m] * w[m, None], axis=0) / np.sum(w[m])
+        r, g, b = float(c[0]), float(c[1]), float(c[2])
+        mx = max(r, g, b)
+        mn = min(r, g, b)
+        s = (mx - mn) / mx if mx > 0 else 0.0
+        v = mx / 255.0
+        score = (cnt ** 0.5) * (s + 0.2) * (v + 0.2)
+        clusters.append({"rgb": (r, g, b), "score": score, "count": cnt})
+
+    # Sort by visual weight & saturation
+    clusters.sort(key=lambda x: -x["score"])
+
+    # Deduplicate clusters that are too close in RGB space (Euclidean distance < 25)
+    dedup = []
+    for cl in clusters:
+        r1, g1, b1 = cl["rgb"]
+        if any((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2 < 25 ** 2 for r2, g2, b2 in [d["rgb"] for d in dedup]):
+            continue
+        dedup.append(cl)
+
+    palette = [f"#{int(round(c['rgb'][0])):02X}{int(round(c['rgb'][1])):02X}{int(round(c['rgb'][2])):02X}" for c in dedup[:8]]
+    return {"success": True, "palette": palette}
+
+
+# ---------------------------------------------------------------------------
+#  /api/slice_color  –  Isolate Pixels Matching Swatch (ΔE < 25)
+# ---------------------------------------------------------------------------
+
+def slice_color(data_url, target_hex, tolerance=25):
+    """Isolate pixels matching target_hex into a dedicated transparent RGBA cutout layer."""
+    import numpy as np
+    from PIL import Image as PILImage
+    import skimage.color
+
+    img = _decode_image(data_url)
+    arr = np.array(img)
+    if arr.ndim != 3 or arr.shape[0] == 0 or arr.shape[1] == 0:
+        return {"success": False, "error": "Invalid image"}
+
+    hex_clean = target_hex.lstrip("#")
+    if len(hex_clean) == 3:
+        hex_clean = "".join(c * 2 for c in hex_clean)
+    if len(hex_clean) != 6:
+        return {"success": False, "error": f"Invalid hex color: {target_hex}"}
+    try:
+        tr = int(hex_clean[0:2], 16)
+        tg = int(hex_clean[2:4], 16)
+        tb = int(hex_clean[4:6], 16)
+    except ValueError:
+        return {"success": False, "error": f"Invalid hex color: {target_hex}"}
+
+    rgb = arr[..., :3].astype(np.float32) / 255.0
+    alpha = arr[..., 3] if arr.shape[2] == 4 else np.full(arr.shape[:2], 255, dtype=np.uint8)
+
+    t_rgb = np.array([[[tr, tg, tb]]], dtype=np.float32) / 255.0
+    t_lab = skimage.color.rgb2lab(t_rgb)[0, 0]
+
+    rgb_lab = skimage.color.rgb2lab(rgb)
+    de = skimage.color.deltaE_cie76(rgb_lab, t_lab)
+
+    mask = (de <= float(tolerance)) & (alpha > 40)
+    matching_count = int(np.sum(mask))
+    if matching_count == 0:
+        return {"success": False, "error": "No matching pixels found"}
+
+    ys, xs = np.where(mask)
+    x0, x1 = int(xs.min()), int(xs.max() + 1)
+    y0, y1 = int(ys.min()), int(ys.max() + 1)
+
+    piece = np.zeros_like(arr)
+    piece[mask] = arr[mask]
+    crop = PILImage.fromarray(piece[y0:y1, x0:x1], "RGBA")
+
+    return {
+        "success": True,
+        "png": png_url(crop),
+        "x": x0,
+        "y": y0,
+        "w": x1 - x0,
+        "h": y1 - y0,
+        "count": matching_count,
+        "color": f"#{tr:02X}{tg:02X}{tb:02X}"
+    }
+
+
+# ---------------------------------------------------------------------------
+#  /api/ocr  –  Optical character recognition & Font Detective (pytesseract)
 # ---------------------------------------------------------------------------
 
 def ocr(data_url):
-    """Extract text with preprocessing to handle multi-colour lettering."""
+    """Extract text with preprocessing, Otsu foreground color sampling, and typography classification."""
     import numpy as np
     import pytesseract
     from PIL import ImageEnhance, ImageOps
+    from PIL import Image as PILImage
+    import scipy.ndimage as ndi
 
     img = _decode_image(data_url).convert("RGB")
 
@@ -187,7 +690,6 @@ def ocr(data_url):
                 break
 
     # --- Preprocessing: 2× upscale + contrast boost so coloured letters survive ---
-    from PIL import Image as PILImage
     w, h = img.size
     _lanczos = getattr(PILImage, 'Resampling', PILImage).LANCZOS
     img_up = img.resize((w * 2, h * 2), resample=_lanczos)
@@ -234,33 +736,85 @@ def ocr(data_url):
 
     full_text = " ".join(all_lines).strip()
     if not full_text:
-        return {"success": False, "text": "", "fontSize": 72, "fill": "#000000"}
+        return {
+            "success": False,
+            "text": "",
+            "fontSize": 72,
+            "fill": "#000000",
+            "detectedFont": "Impact",
+            "fontFamily": "Impact"
+        }
 
     fontSize = max(12, int(best_h * 0.85))
 
-    # Sample dominant text colour from the first line's bounding region
+    # Sample dominant text colour from the first line's bounding region using Otsu mask
     first_ld = lines[sorted(lines.keys())[0]]
     x1c = max(0, first_ld["x"])
     y1c = max(0, first_ld["y"])
     x2c = min(arr.shape[1], first_ld["x2"])
     y2c = min(arr.shape[0], first_ld["y2"])
     region = arr[y1c:y2c, x1c:x2c]
-    if region.size > 0:
-        gray = np.mean(region, axis=2)
-        med = np.median(gray)
-        if med > 127:
-            mask = gray < med * 0.7
-        else:
-            mask = gray > med * 1.3 + 30
-        if mask.any():
-            clr = region[mask].mean(axis=0).astype(int)
-        else:
-            clr = region.mean(axis=(0, 1)).astype(int)
-        fill = f"#{int(clr[0]):02x}{int(clr[1]):02x}{int(clr[2]):02x}"
-    else:
-        fill = "#000000"
 
-    return {"success": True, "text": full_text, "fontSize": fontSize, "fill": fill}
+    fill = "#000000"
+    detected_font = "Montserrat"
+    font_family = "Montserrat, Arial, sans-serif"
+
+    if region.size > 0 and region.shape[0] >= 2 and region.shape[1] >= 2:
+        gray = np.array(PILImage.fromarray(region).convert("L"))
+        t = _otsu_threshold(gray)
+        border_vals = np.concatenate([gray[0, :], gray[-1, :], gray[:, 0], gray[:, -1]])
+        bg_is_light = np.median(border_vals) > t
+        fg_mask = (gray <= t) if bg_is_light else (gray > t)
+
+        if fg_mask.any():
+            fg_pixels = region[fg_mask]
+            # Sample median foreground RGB strictly within the Otsu text mask
+            med_rgb = np.median(fg_pixels, axis=0).astype(int)
+            fill = f"#{int(med_rgb[0]):02X}{int(med_rgb[1]):02X}{int(med_rgb[2]):02X}"
+
+            # Typography Classification
+            reg_h, reg_w = region.shape[:2]
+            clean_chars = [c for c in full_text if c.isalnum()]
+            n_chars = max(1, len(clean_chars))
+            char_w = max(1.0, reg_w / n_chars)
+            aspect_ratio = reg_h / char_w
+            density = float(np.mean(fg_mask))
+
+            dist = ndi.distance_transform_edt(fg_mask)
+            stroke_radius = float(np.max(dist)) if fg_mask.any() else 1.0
+            stroke_weight = (2.0 * stroke_radius) / max(1.0, reg_h)
+
+            dist_vals = dist[fg_mask]
+            variance_ratio = float(np.std(dist_vals) / np.mean(dist_vals)) if len(dist_vals) > 0 and np.mean(dist_vals) > 0 else 0.0
+
+            # 1. Condensed Headline (Bebas Neue / Impact)
+            if aspect_ratio >= 1.40 or (aspect_ratio >= 1.25 and stroke_weight < 0.16):
+                detected_font = "Bebas Neue"
+                font_family = "Bebas Neue, Impact, sans-serif"
+            # 2. Rounded Retro / Heavy (Cooper Black / Fatface)
+            elif density >= 0.44 or stroke_weight >= 0.22:
+                detected_font = "Cooper Black"
+                font_family = "Cooper Black, Impact, serif"
+            # 3. Serif (Georgia)
+            elif variance_ratio > 0.65:
+                detected_font = "Georgia"
+                font_family = "Georgia, serif"
+            # 4. Geometric Sans (Montserrat / Arial)
+            else:
+                detected_font = "Montserrat"
+                font_family = "Montserrat, Arial, sans-serif"
+        else:
+            med_rgb = np.median(region, axis=(0, 1)).astype(int)
+            fill = f"#{int(med_rgb[0]):02X}{int(med_rgb[1]):02X}{int(med_rgb[2]):02X}"
+
+    return {
+        "success": True,
+        "text": full_text,
+        "fontSize": fontSize,
+        "fill": fill,
+        "detectedFont": detected_font,
+        "fontFamily": font_family
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -299,9 +853,13 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"layers": segment(body["image"],
                                        "split" if mode == "split" else "cutout")})
             if path == "/api/vectorize":
-                return self.send_json(vectorize(body["image"]))
+                return self.send_json(vectorize(body["image"], body.get("preset", DEFAULT_PRESET)))
             if path == "/api/ocr":
                 return self.send_json(ocr(body["image"]))
+            if path == "/api/extract_palette":
+                return self.send_json(extract_palette(body["image"]))
+            if path == "/api/slice_color":
+                return self.send_json(slice_color(body["image"], body.get("color", "#000000"), body.get("tolerance", 25)))
             self.send_json({"error": "not found"}, 404)
         except Exception as e:
             self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)

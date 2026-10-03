@@ -9,6 +9,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ag-psd/dist/bundle.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
   <style>
     .checker-pattern {
       background-image: linear-gradient(45deg, #1c1d22 25%, transparent 25%),
@@ -73,13 +76,22 @@
   <!-- MAIN APP -->
   <main class="flex-1 flex overflow-hidden">
     <!-- VIEWPORT -->
-    <div class="flex-1 flex flex-col p-4 overflow-hidden">
+    <div class="flex-1 flex flex-col p-4 overflow-hidden relative">
       <!-- Secondary Toolbar -->
-      <div class="mb-3 flex items-center justify-between bg-[#18191f] border border-[#262833] px-4 py-2 rounded-xl text-xs">
+      <div class="mb-3 flex flex-wrap gap-y-2 items-center justify-between bg-[#18191f] border border-[#262833] px-4 py-2 rounded-xl text-xs">
         <div id="toolbarDeconstruct" class="flex items-center gap-2">
           <span class="text-slate-400 text-[11px]">Region Actions:</span>
           <button id="btnVectorizeRegion" class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-semibold">
             <i data-lucide="bezier" class="w-3.5 h-3.5"></i> Vectorize Region
+          </button>
+          <!-- Trace preset (segmented pill) -->
+          <div id="presetPills" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[10px] font-medium" title="Vector trace preset">
+            <button data-preset="logo" class="px-2 py-1 text-slate-400 hover:text-slate-200 transition" title="Flat geometric brand marks and icons (8 colours)">Logo (Crisp)</button>
+            <button data-preset="illustration" class="px-2 py-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Cartoon artwork, badges, mascots (16 colours)">Illustration</button>
+            <button data-preset="silhouette" class="px-2 py-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Single-colour stamps, typography, ink marks (2-colour mask)">Stamp / Ink</button>
+          </div>
+          <button id="btnSliceByColor" class="px-2.5 py-1 rounded bg-[#20222a] hover:bg-[#282a35] text-amber-300 border border-amber-500/30 flex items-center gap-1 font-semibold" title="Isolate pixels matching chosen swatch color (ΔE < 25) into a dedicated canvas layer">
+            <i data-lucide="droplet" class="w-3.5 h-3.5 text-amber-400"></i> Slice by Color
           </button>
           <button id="btnExtractTextOCR" class="px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1">
             <i data-lucide="type" class="w-3.5 h-3.5 text-indigo-400"></i> Extract Text (OCR)
@@ -87,6 +99,15 @@
           <button id="btnCutoutAI" class="px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1">
             <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i> Cut Region (AI)
           </button>
+          <button class="btn-eyedropper px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1" title="Eyedropper (I) - sample a colour from the image into the active object's Fill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg> Eyedropper
+          </button>
+          <div class="h-4 w-px bg-slate-700 mx-1"></div>
+          <!-- Brand Swatches in Tab 1 -->
+          <div class="flex items-center gap-1.5" title="Brand Palette Swatches (click to select for Slice by Color, Alt-click to copy)">
+            <span class="text-slate-400 text-[10px] hidden sm:inline">Swatches:</span>
+            <div id="swatchListTab1" class="flex items-center gap-1"></div>
+          </div>
         </div>
 
         <div id="toolbarCanvas" class="flex items-center gap-2 hidden">
@@ -124,6 +145,11 @@
           <button id="btnPunchOut" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400 text-[11px] flex items-center gap-1" title="Cut hole through artwork using active shape">
             <i data-lucide="scissors" class="w-3.5 h-3.5 text-red-400"></i> Punch Out
           </button>
+
+          <!-- Eyedropper (hotkey: I) -->
+          <button class="btn-eyedropper px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400 text-[11px] flex items-center gap-1" title="Eyedropper (I) - sample a colour into the active object's Fill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg> Eyedropper
+          </button>
         </div>
 
         <div id="toolbarLowerThird" class="flex items-center gap-2 hidden">
@@ -134,6 +160,31 @@
         </div>
 
         <div id="statusText" class="text-slate-400 font-mono text-[11px]">Ready</div>
+      </div>
+
+      <!-- Alignment Toolbar (Photoshop Canvas tab) -->
+      <div id="alignBar" class="hidden mb-3 flex items-center gap-1 bg-[#18191f] border border-[#262833] px-3 py-1.5 rounded-xl text-xs">
+        <span class="text-slate-400 text-[11px] mr-1">Align:</span>
+        <button data-align="left" title="Align Left" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="3" y2="21"/><rect x="7" y="6" width="13" height="5" rx="1"/><rect x="7" y="14" width="8" height="5" rx="1"/></svg>
+        </button>
+        <button data-align="hcenter" title="Center Horizontally" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><rect x="5" y="6" width="14" height="5" rx="1"/><rect x="8" y="14" width="8" height="5" rx="1"/></svg>
+        </button>
+        <button data-align="right" title="Align Right" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="3" x2="21" y2="21"/><rect x="4" y="6" width="13" height="5" rx="1"/><rect x="9" y="14" width="8" height="5" rx="1"/></svg>
+        </button>
+        <div class="h-4 w-px bg-slate-700 mx-1"></div>
+        <button data-align="top" title="Align Top" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="21" y2="3"/><rect x="6" y="7" width="5" height="13" rx="1"/><rect x="14" y="7" width="5" height="8" rx="1"/></svg>
+        </button>
+        <button data-align="vcenter" title="Center Vertically" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><rect x="6" y="5" width="5" height="14" rx="1"/><rect x="14" y="8" width="5" height="8" rx="1"/></svg>
+        </button>
+        <button data-align="bottom" title="Align Bottom" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><rect x="6" y="4" width="5" height="13" rx="1"/><rect x="14" y="9" width="5" height="8" rx="1"/></svg>
+        </button>
+        <span class="ml-2 text-[10px] text-slate-500">One object aligns to the canvas; multiple objects align to each other. Lock-protected layers are skipped.</span>
       </div>
 
       <!-- Stage Container -->
@@ -162,6 +213,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Viewport controls (zoom readout, fit, 1:1) -->
+      <div id="viewportWidget" class="hidden absolute bottom-8 left-8 z-30 flex items-center gap-1.5 bg-[#18191f]/95 backdrop-blur border border-[#2b2d39] rounded-lg px-2 py-1 text-[11px] shadow-xl">
+        <span class="text-slate-400">Zoom:</span>
+        <span id="zoomLabel" class="font-mono text-amber-300 w-10 text-center">100%</span>
+        <div class="h-3.5 w-px bg-slate-700"></div>
+        <button id="btnFitScreen" class="px-1.5 py-0.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Fit artwork to the visible canvas">Fit to Screen</button>
+        <button id="btnZoomReset" class="px-1.5 py-0.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Reset to 100% and original position">1:1 Reset</button>
+      </div>
     </div>
 
     <!-- RIGHT: INSPECTOR & LAYERS -->
@@ -174,6 +234,21 @@
 
         <!-- Dynamic Controls -->
         <div class="space-y-3 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
+          <!-- Brand Swatches -->
+          <div class="pb-2.5 border-b border-slate-800">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
+                <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Brand Swatches
+              </label>
+              <button id="btnRefreshPalette" class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1" title="Extract palette from current source crop or image">
+                <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Refresh
+              </button>
+            </div>
+            <div id="swatchListInspector" class="flex flex-wrap gap-1.5 items-center">
+              <span class="text-[10px] text-slate-500 italic">Load an image to extract palette</span>
+            </div>
+          </div>
+
           <!-- Fill Color -->
           <div>
             <div class="flex items-center justify-between mb-1">
@@ -201,9 +276,11 @@
               <label class="text-slate-400 text-[11px]">Font Family:</label>
               <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
                 <option value="Impact">Impact (Headline)</option>
+                <option value="Bebas Neue">Bebas Neue (Condensed)</option>
+                <option value="Cooper Black">Cooper Black (Retro)</option>
+                <option value="Montserrat">Montserrat (Geometric Sans)</option>
                 <option value="Arial">Arial</option>
-                <option value="Montserrat">Montserrat</option>
-                <option value="Georgia">Georgia</option>
+                <option value="Georgia">Georgia (Serif)</option>
                 <option value="Courier New">Courier New</option>
               </select>
             </div>
@@ -256,8 +333,13 @@
     const fCanvas = new fabric.Canvas('fabricCanvas', {
       backgroundColor: '#12141A',
       preserveObjectStacking: true,
-      fireRightClick: true
+      fireRightClick: true,
+      svgViewportTransformation: false   // exports stay in artboard space regardless of zoom/pan
     });
+
+    // Custom properties persisted in undo history and .mikoproj files
+    const SERIAL_PROPS = ['id', 'name', 'selectable', 'hasControls', 'hasBorders', 'subTargetCheck', 'globalCompositeOperation',
+                          'locked', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY'];
 
     // 3. Undo / Redo Engine
     let undoStack = [];
@@ -266,7 +348,7 @@
 
     function saveCanvasState() {
       if (isStateProcessing) return;
-      const json = JSON.stringify(fCanvas.toJSON(['id', 'name', 'selectable', 'hasControls', 'subTargetCheck', 'globalCompositeOperation']));
+      const json = JSON.stringify(fCanvas.toJSON(SERIAL_PROPS));
       undoStack.push(json);
       if (undoStack.length > 40) undoStack.shift();
       redoStack = [];
@@ -276,16 +358,24 @@
     fCanvas.on('object:added', saveCanvasState);
     fCanvas.on('object:removed', saveCanvasState);
 
+    // Restore a serialised canvas state while keeping the user's zoom / pan.
+    function restoreState(json) {
+      const vpt = fCanvas.viewportTransform.slice();
+      fCanvas.loadFromJSON(json, () => {
+        fCanvas.getObjects().forEach(o => applyLockState(o, !!o.locked));
+        fCanvas.setViewportTransform(vpt);
+        fCanvas.renderAll();
+        isStateProcessing = false;
+        updateLayersUI();
+        updateZoomUI();
+      });
+    }
+
     function undo() {
       if (undoStack.length <= 1) return;
       isStateProcessing = true;
       redoStack.push(undoStack.pop());
-      const prevState = undoStack[undoStack.length - 1];
-      fCanvas.loadFromJSON(prevState, () => {
-        fCanvas.renderAll();
-        isStateProcessing = false;
-        updateLayersUI();
-      });
+      restoreState(undoStack[undoStack.length - 1]);
     }
 
     function redo() {
@@ -293,11 +383,7 @@
       isStateProcessing = true;
       const nextState = redoStack.pop();
       undoStack.push(nextState);
-      fCanvas.loadFromJSON(nextState, () => {
-        fCanvas.renderAll();
-        isStateProcessing = false;
-        updateLayersUI();
-      });
+      restoreState(nextState);
     }
 
     document.getElementById('btnUndo').addEventListener('click', undo);
@@ -333,9 +419,11 @@
     }
 
     function cutActive() {
-      copyActive();
       const active = fCanvas.getActiveObject();
-      if (active) fCanvas.remove(active);
+      if (!active) return;
+      if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it first."; return; }
+      copyActive();
+      fCanvas.remove(active);
     }
 
     function duplicateActive() {
@@ -347,8 +435,11 @@
       const active = fCanvas.getActiveObject();
       if (!active) return;
       if (active.type === 'activeSelection') {
-        active.forEachObject((obj) => fCanvas.remove(obj));
+        active.forEachObject((obj) => { if (!obj.locked) fCanvas.remove(obj); });
         fCanvas.discardActiveObject();
+      } else if (active.locked) {
+        document.getElementById('statusText').innerText = "Layer is locked - unlock it before deleting.";
+        return;
       } else {
         fCanvas.remove(active);
       }
@@ -361,9 +452,18 @@
     // Global Keyboard Listeners
     window.addEventListener('keydown', (e) => {
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) return;
       const activeObj = fCanvas.getActiveObject();
       if (activeObj && activeObj.isEditing) return;
+
+      // Spacebar = temporary pan (hand) tool while the canvas tab is showing
+      if (e.code === 'Space' || e.key === ' ') {
+        if (isCanvasTabVisible()) {
+          e.preventDefault();
+          if (!e.repeat) setSpacePan(true);
+        }
+        return;
+      }
 
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'c' || e.key === 'C') { e.preventDefault(); copyActive(); }
@@ -379,10 +479,15 @@
         e.preventDefault();
         deleteActive();
       } else if (e.key === 'Escape') {
+        if (eyedropperFallbackActive) { setEyedropperFallback(false); return; }
         fCanvas.discardActiveObject();
         fCanvas.renderAll();
+      } else if ((e.key === 'i' || e.key === 'I') && !e.altKey) {
+        e.preventDefault();
+        activateEyedropper();
       } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && activeObj) {
         e.preventDefault();
+        if (activeObj.locked) return;
         const step = e.shiftKey ? 10 : 1;
         if (e.key === 'ArrowUp') activeObj.top -= step;
         if (e.key === 'ArrowDown') activeObj.top += step;
@@ -393,11 +498,124 @@
       }
     });
 
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        if (spacePanActive) { e.preventDefault(); setSpacePan(false); }
+      }
+    });
+    window.addEventListener('blur', () => setSpacePan(false));
+
     // 5. Image Loading & Crop Handling
+    let currentBrandPalette = [];
+    let selectedSliceColor = null;
+
+    async function loadBrandPalette(imgDataUrl) {
+      if (!imgDataUrl) return;
+      try {
+        const resp = await fetch('/api/extract_palette', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imgDataUrl })
+        });
+        const data = await resp.json();
+        if (data.success && Array.isArray(data.palette) && data.palette.length > 0) {
+          currentBrandPalette = data.palette;
+          if (!selectedSliceColor || !currentBrandPalette.includes(selectedSliceColor)) {
+            selectedSliceColor = currentBrandPalette[0];
+          }
+          renderBrandSwatches();
+        }
+      } catch (err) {
+        console.warn("Palette extraction failed:", err);
+      }
+    }
+
+    function renderBrandSwatches() {
+      const containerTab1 = document.getElementById('swatchListTab1');
+      const containerInsp = document.getElementById('swatchListInspector');
+      if (!containerTab1 || !containerInsp) return;
+
+      if (!currentBrandPalette || currentBrandPalette.length === 0) {
+        containerTab1.innerHTML = '';
+        containerInsp.innerHTML = '<span class="text-[10px] text-slate-500 italic">No swatches extracted</span>';
+        return;
+      }
+
+      // Render Tab 1 swatches
+      containerTab1.innerHTML = '';
+      currentBrandPalette.forEach(hex => {
+        const isSelected = hex.toUpperCase() === (selectedSliceColor || '').toUpperCase();
+        const btn = document.createElement('button');
+        btn.className = `w-5 h-5 rounded-md border border-white/20 transition hover:scale-110 shrink-0 ${isSelected ? 'ring-2 ring-amber-400 scale-105' : ''}`;
+        btn.style.backgroundColor = hex;
+        btn.title = `${hex} (Click to select for Slice by Color, Alt+Click to copy)`;
+        btn.onclick = (e) => {
+          if (e.altKey) {
+            navigator.clipboard.writeText(hex);
+            document.getElementById('statusText').innerText = `Copied ${hex} to clipboard!`;
+            return;
+          }
+          selectedSliceColor = hex;
+          renderBrandSwatches();
+          document.getElementById('propFillColor').value = hex;
+          document.getElementById('propFillHex').value = hex.toUpperCase();
+          const active = editableActive();
+          if (active) {
+            active.set('fill', hex);
+            fCanvas.renderAll();
+            saveCanvasState();
+          }
+          document.getElementById('statusText').innerText = `Selected swatch ${hex} (Ready for Slice by Color)`;
+        };
+        containerTab1.appendChild(btn);
+      });
+
+      // Render Inspector (Tab 2) swatches
+      containerInsp.innerHTML = '';
+      currentBrandPalette.forEach(hex => {
+        const isSelected = hex.toUpperCase() === (selectedSliceColor || '').toUpperCase();
+        const btn = document.createElement('button');
+        btn.className = `w-6 h-6 rounded-lg border border-white/25 transition hover:scale-110 shadow-sm shrink-0 cursor-pointer ${isSelected ? 'ring-2 ring-amber-400 scale-105' : ''}`;
+        btn.style.backgroundColor = hex;
+        btn.title = `${hex} (Click to apply fill, Alt+Click to copy)`;
+        btn.onclick = (e) => {
+          if (e.altKey) {
+            navigator.clipboard.writeText(hex);
+            document.getElementById('statusText').innerText = `Copied ${hex} to clipboard!`;
+            return;
+          }
+          selectedSliceColor = hex;
+          document.getElementById('propFillColor').value = hex;
+          document.getElementById('propFillHex').value = hex.toUpperCase();
+          const active = editableActive();
+          if (active) {
+            active.set('fill', hex);
+            fCanvas.renderAll();
+            saveCanvasState();
+          }
+          renderBrandSwatches();
+          document.getElementById('statusText').innerText = `Applied brand swatch ${hex}`;
+        };
+        containerInsp.appendChild(btn);
+      });
+    }
+
+    document.getElementById('btnRefreshPalette').addEventListener('click', () => {
+      const { b64 } = getCroppedBase64();
+      document.getElementById('statusText').innerText = "Extracting brand palette...";
+      loadBrandPalette(b64);
+    });
+
     sourceImg.onload = () => {
       sCanvas.width = sourceImg.width;
       sCanvas.height = sourceImg.height;
       redrawSource();
+      try {
+        const b64 = sourceImg.src.startsWith('data:') ? sourceImg.src : sCanvas.toDataURL('image/png');
+        loadBrandPalette(b64);
+      } catch (err) {
+        // Cross-origin fallback if running on file:// protocol
+      }
     };
     sourceImg.src = "sample_concept.png";
 
@@ -412,6 +630,7 @@
           sCanvas.height = sourceImg.height;
           redrawSource();
           document.getElementById('statusText').innerText = `Loaded: ${file.name}`;
+          loadBrandPalette(evt.target.result);
         };
         sourceImg.src = evt.target.result;
       };
@@ -475,38 +694,107 @@
       return { b64: tempC.toDataURL('image/png'), bounds: crop };
     }
 
+    // Tight-bounds helpers --------------------------------------------------
+    // Recompute a group's width/height/offset purely from its child paths
+    // (no viewBox padding) and refresh its control coordinates.
+    function snapGroupToArtwork(group) {
+      if (!group || typeof group.addWithUpdate !== 'function') {
+        if (group) { group.padding = 0; group.setCoords(); }
+        return group;
+      }
+      group.padding = 0;
+      // addWithUpdate() with no argument restores child state, recalculates
+      // the union bounding box of all children and re-centres the group on it.
+      group.addWithUpdate();
+      // Only the parent group shows an outline + handles; sub-paths stay silent.
+      group.getObjects().forEach(c => { c.hasBorders = false; c.hasControls = false; });
+      group.hasBorders = true;
+      group.hasControls = !group.locked;
+      group.setCoords();
+      group.dirty = true;
+      return group;
+    }
+
+    // Make a standalone object's box hug its geometry (no padding / stale cache).
+    function snapObjectTight(obj) {
+      obj.padding = 0;
+      obj.strokeUniform = true;
+      obj.dirty = true;
+      obj.setCoords();
+      return obj;
+    }
+
+    // Extraction preset (segmented pill selector next to "Vectorize Region")
+    const PRESET_LABELS = { logo: 'Logo (Crisp)', illustration: 'Illustration', silhouette: 'Stamp / Ink' };
+    let currentPreset = localStorage.getItem('mikoVectorPreset');
+    if (!PRESET_LABELS[currentPreset]) currentPreset = 'logo';
+
+    function setPreset(p) {
+      if (!PRESET_LABELS[p]) return;
+      currentPreset = p;
+      localStorage.setItem('mikoVectorPreset', p);
+      document.querySelectorAll('#presetPills [data-preset]').forEach(btn => {
+        const on = btn.dataset.preset === p;
+        btn.classList.toggle('bg-amber-500/25', on);
+        btn.classList.toggle('text-amber-300', on);
+        btn.classList.toggle('text-slate-400', !on);
+      });
+    }
+    document.querySelectorAll('#presetPills [data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => setPreset(btn.dataset.preset));
+    });
+    setPreset(currentPreset);
+
     // 6. Vectorize Region Pipeline (Assembled Grouping)
     document.getElementById('btnVectorizeRegion').addEventListener('click', async () => {
       const { b64, bounds } = getCroppedBase64();
-      document.getElementById('statusText').innerText = "Vectorizing color boundaries via vtracer...";
+      document.getElementById('statusText').innerText = `Vectorizing (${PRESET_LABELS[currentPreset]}) via vtracer...`;
 
       try {
         const resp = await fetch('/api/vectorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: b64 })
+          body: JSON.stringify({ image: b64, preset: currentPreset })
         });
         const data = await resp.json();
         if (data.success && data.svg) {
           fabric.loadSVGFromString(data.svg, (objects, options) => {
             if (!objects || objects.length === 0) return;
 
-            // Filter out full-frame background bounding box
-            const valid = objects.filter(o => !(o.width >= bounds.w * 0.96 && o.height >= bounds.h * 0.96));
-            const items = valid.length > 0 ? valid : objects;
+            // Keep only valid vector paths: drop full-frame background boxes
+            // and any degenerate sliver / speckle (< 25px² or hairline)
+            const isFullFrame = o => currentPreset !== 'silhouette' && o.width >= bounds.w * 0.96 && o.height >= bounds.h * 0.96;
+            const isSpeck = o => (o.width * o.height) < 25 || Math.min(o.width, o.height) < 2;
+            let items = objects.filter(o => !isFullFrame(o) && !isSpeck(o));
+            if (items.length === 0) items = objects.filter(o => !isSpeck(o));
+            if (items.length === 0) items = objects;
 
-            // Group paths and center on canvas at readable proportions
-            const group = fabric.util.groupSVGElements(items, options);
+            // Group using ONLY the artwork: strip the SVG viewport size/position
+            // from `options`, otherwise fabric forces the full (padded) viewBox
+            // dimensions onto the group instead of the paths' true extent.
+            const groupOpts = Object.assign({}, options);
+            ['width', 'height', 'left', 'top', 'viewBoxWidth', 'viewBoxHeight'].forEach(k => delete groupOpts[k]);
+            const group = fabric.util.groupSVGElements(items, groupOpts);
+
+            // --- Tight bounding-box snap ---
+            // Recompute group width/height/offsets from the union of the child
+            // path rects so the selection box hugs the visible artwork.
+            snapGroupToArtwork(group);
+
+            // Scale to readable canvas proportions
             group.scaleToWidth(Math.min(450, fCanvas.getWidth() * 0.6));
+            const vc = viewportCenter();
             group.set({
-              left: fCanvas.getWidth() / 2,
-              top: fCanvas.getHeight() / 2,
+              left: vc.x,
+              top: vc.y,
               originX: 'center',
               originY: 'center',
+              padding: 0,
               name: `Vector Artwork (${items.length} paths)`
             });
 
             fCanvas.add(group);
+            group.setCoords();   // 8-point handles hug the artwork immediately
             fCanvas.setActiveObject(group);
             fCanvas.renderAll();
             saveCanvasState();
@@ -522,34 +810,91 @@
       }
     });
 
+    // --- Selection chrome rules (prevents "bounding box soup") -------------
+    // Members of a Group / ActiveSelection never draw their own borders or
+    // handles; only the parent does. A single, isolated object gets its own.
+    function setMemberChrome(obj, on) {
+      obj.hasBorders = on;
+      obj.hasControls = on && !obj.locked;
+    }
+
+    function setGroupChildChrome(group) {
+      if (!group || typeof group.getObjects !== 'function') return;
+      group.getObjects().forEach(c => setMemberChrome(c, false));
+      group.hasBorders = true;
+      group.hasControls = !group.locked;
+    }
+
+    // Keep every group on the canvas obeying the rule (paste, undo/redo, project load, ...)
+    fCanvas.on('object:added', (e) => {
+      const o = e.target;
+      if (o && o.type === 'group') setGroupChildChrome(o);
+    });
+
     // Ungroup & Group Buttons
-    document.getElementById('btnUngroup').addEventListener('click', () => {
+    function ungroupActive(pointerEvent) {
       const active = fCanvas.getActiveObject();
-      if (!active || active.type !== 'group') return;
+      if (!active || active.type !== 'group') return false;
+      if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it to ungroup."; return false; }
       active.toActiveSelection();
-      // Lock every child's world-space position after ungrouping
-      fCanvas.getActiveObject().forEachObject(obj => {
-        obj.setCoords();
-      });
+      // Release children to top-level canvas objects, then re-apply the tight
+      // bounding-box snap to every isolated path so its 8 handles hug the
+      // individual shape with no inherited group padding.
+      const sel = fCanvas.getActiveObject();
+      if (sel && sel.type === 'activeSelection') {
+        const kids = sel.getObjects().slice();
+        fCanvas.discardActiveObject();
+        kids.forEach(snapObjectTight);
+        fCanvas.setActiveObject(new fabric.ActiveSelection(kids, { canvas: fCanvas }));   // members get chrome off in onSelectionChanged
+      }
       fCanvas.requestRenderAll();
       saveCanvasState();
       updateLayersUI();
       document.getElementById('statusText').innerText = "Ungrouped into selectable paths!";
-    });
+      return true;
+    }
+    document.getElementById('btnUngroup').addEventListener('click', () => ungroupActive());
 
     document.getElementById('btnGroup').addEventListener('click', () => {
       const active = fCanvas.getActiveObject();
       if (!active || active.type !== 'activeSelection') return;
-      active.toGroup();
+      const group = active.toGroup();
+      setGroupChildChrome(group);
+      fCanvas.setActiveObject(group);
       fCanvas.requestRenderAll();
       updateLayersUI();
       document.getElementById('statusText').innerText = "Grouped selected elements!";
     });
 
-    // 7. OCR Text Extraction Pipeline
+    // Double-click: isolate the single path under the cursor.
+    //  - on a multi-selection (e.g. just after Ungroup) -> select only that path
+    //  - on a group -> explode it, then select only the path under the cursor
+    fCanvas.on('mouse:dblclick', (opt) => {
+      let active = fCanvas.getActiveObject();
+      if (!active || (active.type !== 'activeSelection' && active.type !== 'group')) return;
+      if (active.type === 'group' && !ungroupActive()) return;
+      active = fCanvas.getActiveObject();
+      if (!active || active.type !== 'activeSelection') return;
+      const members = active.getObjects().slice();
+      fCanvas.discardActiveObject();
+      const prevPP = fCanvas.perPixelTargetFind;
+      fCanvas.perPixelTargetFind = true;               // pick the visible shape, not the topmost bbox
+      let hit = fCanvas.findTarget(opt.e, true);
+      fCanvas.perPixelTargetFind = prevPP;
+      if (!hit || !members.includes(hit) || hit.locked) hit = null;
+      if (hit) {
+        fCanvas.setActiveObject(hit);                  // onSelectionChanged re-enables its borders/handles
+        document.getElementById('statusText').innerText = `Isolated "${hit.name || hit.type}"`;
+      } else {
+        fCanvas.setActiveObject(new fabric.ActiveSelection(members, { canvas: fCanvas }));
+      }
+      fCanvas.requestRenderAll();
+    });
+
+    // 7. OCR Text Extraction Pipeline & Typography Classifier
     document.getElementById('btnExtractTextOCR').addEventListener('click', async () => {
       const { b64, bounds } = getCroppedBase64();
-      document.getElementById('statusText').innerText = "Running Tesseract OCR recognition...";
+      document.getElementById('statusText').innerText = "Running Tesseract OCR & font detection...";
 
       try {
         const resp = await fetch('/api/ocr', {
@@ -559,22 +904,38 @@
         });
         const data = await resp.json();
         const textStr = (data.success && data.text) ? data.text : (prompt("Enter text for layer:") || "TEXT");
-        
+        const detectedFont = data.detectedFont || "Impact";
+        const fontFamily = data.fontFamily || (detectedFont ? `${detectedFont}, sans-serif` : 'Impact');
+        const fill = data.fill || '#F59E0B';
+        const fontSize = data.fontSize || 72;
+
         const iText = new fabric.IText(textStr, {
           left: 200,
           top: 200,
-          fontFamily: 'Impact',
-          fontSize: data.fontSize || 72,
-          fill: data.fill || '#F59E0B',
+          fontFamily: fontFamily,
+          fontSize: fontSize,
+          fill: fill,
           name: `Text: ${textStr}`
         });
 
         fCanvas.add(iText);
         fCanvas.setActiveObject(iText);
         fCanvas.renderAll();
+        saveCanvasState();
         switchTab('canvas');
         updateLayersUI();
-        document.getElementById('statusText').innerText = `Extracted text layer: "${textStr}"`;
+
+        // Sync inspector inputs
+        document.getElementById('propFillColor').value = fill;
+        document.getElementById('propFillHex').value = fill.toUpperCase();
+        document.getElementById('propFontSize').value = fontSize;
+        document.getElementById('fontSizeVal').innerText = fontSize;
+        const fontSelect = document.getElementById('propFontFamily');
+        if ([...fontSelect.options].some(o => o.value === detectedFont)) {
+          fontSelect.value = detectedFont;
+        }
+
+        document.getElementById('statusText').innerText = `Identified: ${detectedFont} (${fill}) - "${textStr}"`;
       } catch (err) {
         const textStr = prompt("OCR offline. Enter text for layer:") || "TEXT";
         const iText = new fabric.IText(textStr, { left: 200, top: 200, fontFamily: 'Impact', fontSize: 72, fill: '#F59E0B', name: `Text: ${textStr}` });
@@ -585,29 +946,97 @@
       }
     });
 
+    // 7b. Slice by Color Pipeline (Isolate Swatch Pixels ΔE < 25)
+    document.getElementById('btnSliceByColor').addEventListener('click', async () => {
+      const { b64 } = getCroppedBase64();
+      const targetColor = selectedSliceColor || document.getElementById('propFillHex').value || '#F59E0B';
+      const status = document.getElementById('statusText');
+      status.innerText = `Slicing pixels matching ${targetColor} (ΔE < 25)...`;
+
+      try {
+        const resp = await fetch('/api/slice_color', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: b64, color: targetColor, tolerance: 25 })
+        });
+        const data = await resp.json();
+        if (!data.success || !data.png) {
+          status.innerText = data.error ? `Color slice error: ${data.error}` : `No pixels matched ${targetColor} within tolerance.`;
+          return;
+        }
+
+        fabric.Image.fromURL(data.png, (img) => {
+          const s = Math.min(1, (fCanvas.getWidth() * 0.7) / data.w, (fCanvas.getHeight() * 0.7) / data.h);
+          const vc = viewportCenter();
+          img.set({
+            left: vc.x,
+            top: vc.y,
+            originX: 'center',
+            originY: 'center',
+            scaleX: s,
+            scaleY: s,
+            name: `Color Slice (${data.color || targetColor})`
+          });
+          fCanvas.add(img);
+          fCanvas.setActiveObject(img);
+          fCanvas.renderAll();
+          saveCanvasState();
+          switchTab('canvas');
+          updateLayersUI();
+          status.innerText = `Isolated ${data.count} pixels into layer "Color Slice (${data.color || targetColor})"!`;
+        });
+      } catch (err) {
+        alert("Failed to reach /api/slice_color.");
+      }
+    });
+
     // 8. AI Neural Cutout Pipeline
+    // /api/ai_segment returns { layers: [{ name, png (data URL), x, y, w, h }] }
+    // where x/y/w/h are relative to the submitted crop.
     document.getElementById('btnCutoutAI').addEventListener('click', async () => {
       const { b64 } = getCroppedBase64();
-      document.getElementById('statusText').innerText = "Running local u2net background isolation...";
+      const status = document.getElementById('statusText');
+      status.innerText = "Running local u2net background isolation...";
 
       try {
         const resp = await fetch('/api/ai_segment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: b64 })
+          body: JSON.stringify({ image: b64, mode: 'cutout' })
         });
         const data = await resp.json();
-        if (data.success && data.image) {
-          fabric.Image.fromURL(data.image, (img) => {
-            img.set({ left: 200, top: 150, name: "AI Cutout Layer" });
-            fCanvas.add(img);
-            fCanvas.setActiveObject(img);
-            fCanvas.renderAll();
-            switchTab('canvas');
-            updateLayersUI();
-            document.getElementById('statusText').innerText = "AI Cutout layer generated!";
-          });
+        const layers = Array.isArray(data.layers) ? data.layers : [];
+        if (data.error || layers.length === 0) {
+          status.innerText = data.error ? `AI cutout failed: ${data.error}` : "AI cutout found no foreground subject in this region.";
+          return;
         }
+
+        // Union box of all returned pieces (crop-relative), used to scale + centre them as one unit
+        const ux0 = Math.min(...layers.map(l => l.x)), uy0 = Math.min(...layers.map(l => l.y));
+        const ux1 = Math.max(...layers.map(l => l.x + l.w)), uy1 = Math.max(...layers.map(l => l.y + l.h));
+        const uw = ux1 - ux0, uh = uy1 - uy0;
+        const s = Math.min(1, (fCanvas.getWidth() * 0.8) / uw, (fCanvas.getHeight() * 0.8) / uh);
+        const vc = viewportCenter();
+        const baseX = vc.x - (uw * s) / 2, baseY = vc.y - (uh * s) / 2;
+
+        const imgs = await Promise.all(layers.map(l => new Promise(res => {
+          fabric.Image.fromURL(l.png, (img) => {
+            img.set({
+              left: baseX + (l.x - ux0) * s,
+              top: baseY + (l.y - uy0) * s,
+              scaleX: s, scaleY: s,
+              name: l.name || "AI Cutout Layer"
+            });
+            res(img);
+          });
+        })));
+
+        imgs.forEach(img => fCanvas.add(img));
+        fCanvas.setActiveObject(imgs[imgs.length - 1]);
+        fCanvas.renderAll();
+        switchTab('canvas');
+        updateLayersUI();
+        status.innerText = `AI cutout: ${imgs.length} layer${imgs.length > 1 ? 's' : ''} generated!`;
       } catch (err) {
         alert("Failed to reach /api/ai_segment.");
       }
@@ -656,6 +1085,7 @@
     document.getElementById('btnPunchOut').addEventListener('click', () => {
       const active = fCanvas.getActiveObject();
       if (!active) return alert("Select a top shape to punch out through underlying layers.");
+      if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it first."; return; }
       active.set('globalCompositeOperation', 'destination-out');
       fCanvas.requestRenderAll();
       saveCanvasState();
@@ -664,7 +1094,7 @@
 
     // 10. Project Save & Load Engine (.mikoproj)
     document.getElementById('btnSaveProject').addEventListener('click', () => {
-      const proj = fCanvas.toJSON(['id', 'name', 'selectable', 'hasControls', 'subTargetCheck', 'globalCompositeOperation']);
+      const proj = fCanvas.toJSON(SERIAL_PROPS);
       const blob = new Blob([JSON.stringify(proj, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -678,6 +1108,9 @@
       const reader = new FileReader();
       reader.onload = (evt) => {
         fCanvas.loadFromJSON(evt.target.result, () => {
+          fCanvas.getObjects().forEach(o => applyLockState(o, !!o.locked));
+          fCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          updateZoomUI();
           fCanvas.renderAll();
           switchTab('canvas');
           updateLayersUI();
@@ -688,8 +1121,37 @@
     });
 
     // 11. Property Inspector Two-Way Sync
-    fCanvas.on('selection:created', syncInspector);
-    fCanvas.on('selection:updated', syncInspector);
+    fCanvas.on('selection:created', onSelectionChanged);
+    fCanvas.on('selection:updated', onSelectionChanged);
+    fCanvas.on('selection:cleared', highlightActiveLayers);
+
+    function onSelectionChanged() {
+      // Locked layers can't be part of a multi-selection (Illustrator-style):
+      // drop them so the remaining objects stay freely editable.
+      const sel = fCanvas.getActiveObject();
+      if (sel && sel.type === 'activeSelection') {
+        const kids = sel.getObjects().slice();
+        const free = kids.filter(o => !o.locked);
+        if (free.length !== kids.length) {
+          fCanvas.discardActiveObject();
+          if (free.length > 1) fCanvas.setActiveObject(new fabric.ActiveSelection(free, { canvas: fCanvas }));
+          else if (free.length === 1) fCanvas.setActiveObject(free[0]);
+          fCanvas.requestRenderAll();
+          return; // setActiveObject re-enters this handler
+        }
+      }
+
+      // Only the parent (Group / ActiveSelection) draws an outline + handles;
+      // a single isolated object gets its own back.
+      const cur = fCanvas.getActiveObject();
+      if (cur) {
+        if (cur.type === 'activeSelection') cur.getObjects().forEach(o => setMemberChrome(o, false));
+        else if (cur.type === 'group') setGroupChildChrome(cur);
+        else setMemberChrome(cur, true);
+      }
+      syncInspector();
+      highlightActiveLayers();
+    }
 
     function syncInspector() {
       const active = fCanvas.getActiveObject();
@@ -711,43 +1173,54 @@
       }
     }
 
+    // Returns the active object only if it exists and is not locked.
+    function editableActive() {
+      const active = fCanvas.getActiveObject();
+      if (!active) return null;
+      if (active.locked) {
+        document.getElementById('statusText').innerText = "Layer is locked - unlock it to edit.";
+        return null;
+      }
+      return active;
+    }
+
     document.getElementById('propFillColor').addEventListener('input', (e) => {
       const val = e.target.value;
       document.getElementById('propFillHex').value = val.toUpperCase();
-      const active = fCanvas.getActiveObject();
+      const active = editableActive();
       if (active) { active.set('fill', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propFillHex').addEventListener('change', (e) => {
       const val = e.target.value;
       document.getElementById('propFillColor').value = val;
-      const active = fCanvas.getActiveObject();
+      const active = editableActive();
       if (active) { active.set('fill', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propStrokeColor').addEventListener('input', (e) => {
       const val = e.target.value;
-      const active = fCanvas.getActiveObject();
+      const active = editableActive();
       if (active) { active.set('stroke', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propStrokeWidth').addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
       document.getElementById('strokeWidthVal').innerText = val;
-      const active = fCanvas.getActiveObject();
+      const active = editableActive();
       if (active) { active.set('strokeWidth', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propFontSize').addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
       document.getElementById('fontSizeVal').innerText = val;
-      const active = fCanvas.getActiveObject();
+      const active = editableActive();
       if (active && active.type.includes('text')) { active.set('fontSize', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propFontFamily').addEventListener('change', (e) => {
       const val = e.target.value;
-      const active = fCanvas.getActiveObject();
+      const active = editableActive();
       if (active && active.type.includes('text')) { active.set('fontFamily', val); fCanvas.renderAll(); }
     });
 
@@ -761,31 +1234,113 @@
       if (active) { fCanvas.sendBackwards(active); updateLayersUI(); }
     });
 
-    // 12. Layers List UI
+    // 12. Layers List UI (visibility / lock / inline rename)
+    const ICON_ATTRS = 'width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    const SVG_ICONS = {
+      eye: `<svg ${ICON_ATTRS}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+      eyeOff: `<svg ${ICON_ATTRS}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+      lock: `<svg ${ICON_ATTRS}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+      unlock: `<svg ${ICON_ATTRS}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`
+    };
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
     function updateLayersUI() {
       const container = document.getElementById('layersList');
       const objects = fCanvas.getObjects();
       document.getElementById('layerCountBadge').innerText = `${objects.length} Layers`;
 
       container.innerHTML = '';
-      objects.slice().reverse().forEach((obj, idx) => {
+      objects.slice().reverse().forEach((obj) => {
+        const hidden = obj.visible === false;
+        const locked = !!obj.locked;
+        const fillCss = (typeof obj.fill === 'string' && obj.fill) ? obj.fill : '#fff';
+
         const row = document.createElement('div');
-        row.className = "flex items-center justify-between p-2 rounded-lg bg-[#1c1d24] border border-[#2b2d39] text-xs hover:border-slate-600 transition cursor-pointer";
+        row._obj = obj;
+        row.className = "layer-row flex items-center justify-between p-2 rounded-lg bg-[#1c1d24] border border-[#2b2d39] text-xs hover:border-slate-600 transition cursor-pointer" + (hidden ? " opacity-40" : "");
         row.innerHTML = `
-          <div class="flex items-center gap-1.5 truncate">
-            <span class="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0" style="background-color: ${obj.fill || '#fff'}"></span>
-            <span class="truncate font-medium text-slate-200 text-[11px]">${obj.name || obj.type}</span>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <button data-act="vis" class="shrink-0 ${hidden ? 'text-slate-500' : 'text-slate-300 hover:text-white'}" title="${hidden ? 'Show layer' : 'Hide layer'}">${hidden ? SVG_ICONS.eyeOff : SVG_ICONS.eye}</button>
+            <button data-act="lock" class="shrink-0 ${locked ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}" title="${locked ? 'Unlock layer' : 'Lock layer'}">${locked ? SVG_ICONS.lock : SVG_ICONS.unlock}</button>
+            <span class="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0" style="background-color: ${escapeHtml(fillCss)}"></span>
+            <span data-act="name" class="truncate font-medium text-slate-200 text-[11px]" title="Double-click to rename">${escapeHtml(obj.name || obj.type)}</span>
           </div>
-          <button onclick="mountToLowerThird(this)" class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1 py-0.5 rounded border border-indigo-500/30">Make LT</button>
+          <button onclick="mountToLowerThird(this)" class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1 py-0.5 rounded border border-indigo-500/30 shrink-0 ml-1">Make LT</button>
         `;
+
+        row.querySelector('[data-act="vis"]').onclick = (e) => {
+          e.stopPropagation();
+          obj.visible = !obj.visible;
+          if (!obj.visible && fCanvas.getActiveObject() === obj) fCanvas.discardActiveObject();
+          fCanvas.renderAll();
+          saveCanvasState();
+          updateLayersUI();
+        };
+
+        row.querySelector('[data-act="lock"]').onclick = (e) => {
+          e.stopPropagation();
+          setObjectLocked(obj, !obj.locked);
+          fCanvas.renderAll();
+          saveCanvasState();
+          updateLayersUI();
+        };
+
+        row.querySelector('[data-act="name"]').ondblclick = (e) => {
+          e.stopPropagation();
+          startLayerRename(e.currentTarget, obj);
+        };
+
         row.onclick = (e) => {
-          if (e.target.tagName !== 'BUTTON') {
-            fCanvas.setActiveObject(obj);
-            fCanvas.renderAll();
-          }
+          if (e.target.closest('button') || e.target.closest('input')) return;
+          if (obj.visible === false) return;
+          fCanvas.setActiveObject(obj);
+          fCanvas.renderAll();
+          highlightActiveLayers();
         };
         container.appendChild(row);
       });
+      highlightActiveLayers();
+    }
+
+    function highlightActiveLayers() {
+      const active = fCanvas.getActiveObject();
+      const set = new Set(active ? (active.type === 'activeSelection' ? active.getObjects() : [active]) : []);
+      document.querySelectorAll('#layersList .layer-row').forEach(row => {
+        const on = set.has(row._obj);
+        row.classList.toggle('border-amber-500/60', on);
+        row.classList.toggle('border-[#2b2d39]', !on);
+      });
+    }
+
+    function startLayerRename(span, obj) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = obj.name || obj.type;
+      input.className = "w-full min-w-0 bg-[#0f1014] border border-amber-500/60 rounded px-1 py-0 text-[11px] text-slate-100 outline-none";
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+      let done = false;
+      const finish = (commit) => {
+        if (done) return;
+        done = true;
+        const val = input.value.trim();
+        if (commit && val && val !== obj.name) {
+          obj.name = val;
+          saveCanvasState();
+        }
+        updateLayersUI();
+      };
+      input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') finish(true);
+        else if (e.key === 'Escape') finish(false);
+      });
+      input.addEventListener('click', (e) => e.stopPropagation());
+      input.addEventListener('blur', () => finish(true));
     }
 
     window.mountToLowerThird = (btn) => {
@@ -816,6 +1371,8 @@
       sCanvas.classList.add('hidden');
       document.getElementById('fabricWrapper').classList.add('hidden');
       document.getElementById('lowerThirdStage').classList.add('hidden');
+      document.getElementById('alignBar').classList.add('hidden');
+      document.getElementById('viewportWidget').classList.add('hidden');
 
       if (t === 'deconstruct') {
         document.getElementById('tabDeconstruct').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
@@ -825,6 +1382,8 @@
         document.getElementById('tabCanvas').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
         document.getElementById('toolbarCanvas').classList.remove('hidden');
         document.getElementById('fabricWrapper').classList.remove('hidden');
+        document.getElementById('alignBar').classList.remove('hidden');
+        document.getElementById('viewportWidget').classList.remove('hidden');
         fCanvas.renderAll();
       } else if (t === 'lowerthird') {
         document.getElementById('tabLowerThird').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
@@ -839,36 +1398,62 @@
       if (objects.length === 0) return alert('No layers to export.');
       document.getElementById('statusText').innerText = "Compiling multi-layer PSD...";
 
-      const psdDoc = { width: 1280, height: 720, children: [] };
-      objects.forEach((obj, idx) => {
-        if (!obj.visible) return;
-        const b = obj.getBoundingRect();
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = Math.max(1, Math.round(b.width));
-        tempCanvas.height = Math.max(1, Math.round(b.height));
+      // Objects inside an ActiveSelection report group-relative coordinates, so
+      // release the selection while measuring/rendering, then restore it.
+      const prevActive = fCanvas.getActiveObject();
+      const prevSel = prevActive ? (prevActive.type === 'activeSelection' ? prevActive.getObjects().slice() : [prevActive]) : [];
+      if (prevActive) fCanvas.discardActiveObject();
 
-        const tCtx = tempCanvas.getContext('2d');
-        const img = new Image();
-        img.onload = () => { tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height); };
-        img.src = obj.toDataURL();
+      const W = 1280, H = 720;
+      const psdDoc = { width: W, height: H, children: [] };
+      try {
+        objects.forEach((obj, idx) => {
+          if (!obj.visible) return;
+          const b = obj.getBoundingRect(true, true);   // absolute: ignore viewport zoom/pan
 
-        psdDoc.children.push({
-          name: obj.name || `Layer_${idx + 1}`,
-          top: Math.max(0, Math.round(b.top)),
-          left: Math.max(0, Math.round(b.left)),
-          bottom: Math.min(720, Math.round(b.top + b.height)),
-          right: Math.min(1280, Math.round(b.left + b.width)),
-          canvas: tempCanvas,
-          opacity: 1
+          // Clip to the artboard so layer pixels and PSD bounds always agree
+          const x0 = Math.max(0, Math.floor(b.left)), y0 = Math.max(0, Math.floor(b.top));
+          const x1 = Math.min(W, Math.ceil(b.left + b.width)), y1 = Math.min(H, Math.ceil(b.top + b.height));
+          if (x1 <= x0 || y1 <= y0) return;            // entirely off-canvas
+
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = x1 - x0;
+          tempCanvas.height = y1 - y0;
+          const tCtx = tempCanvas.getContext('2d');
+
+          // Render the Fabric object directly and synchronously into the offscreen context.
+          // Opacity is baked into the PSD layer's own opacity, so render at 1 to avoid double-dimming.
+          const objOpacity = obj.opacity ?? 1;
+          obj.opacity = 1;
+          tCtx.save();
+          tCtx.translate(-x0, -y0);
+          try { obj.render(tCtx); } finally { obj.opacity = objOpacity; }
+          tCtx.restore();
+
+          psdDoc.children.push({
+            name: obj.name || `Layer_${idx + 1}`,
+            top: y0,
+            left: x0,
+            bottom: y1,
+            right: x1,
+            canvas: tempCanvas,
+            opacity: objOpacity
+          });
         });
-      });
+      } finally {
+        if (prevSel.length > 1) fCanvas.setActiveObject(new fabric.ActiveSelection(prevSel, { canvas: fCanvas }));
+        else if (prevSel.length === 1) fCanvas.setActiveObject(prevSel[0]);
+        fCanvas.requestRenderAll();
+      }
+
+      if (psdDoc.children.length === 0) return alert('No visible layers to export.');
 
       const buffer = agPsd.writePsd(psdDoc);
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([buffer], { type: 'application/octet-stream' }));
       a.download = 'MikoStudio_Master.psd';
       a.click();
-      document.getElementById('statusText').innerText = "Exported MikoStudio_Master.psd!";
+      document.getElementById('statusText').innerText = `Exported MikoStudio_Master.psd (${psdDoc.children.length} layers)!`;
     });
 
     document.getElementById('btnExportSVG').addEventListener('click', () => {
@@ -884,6 +1469,7 @@
       if (objects.length === 0) return alert('No layers to export.');
       const zip = new JSZip();
       objects.forEach((obj, i) => {
+        if (!obj.visible) return;
         const data = obj.toDataURL().split(',')[1];
         zip.file(`${obj.name || 'Layer_' + (i+1)}.png`, data, { base64: true });
       });
@@ -921,6 +1507,307 @@
       a.download = 'MikoStudio_LowerThird_1080p.png';
       a.click();
     });
+
+    // ===================================================================
+    // 15. Layer Lock helpers
+    // ===================================================================
+    const LOCK_KEYS = ['lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'lockSkewingX', 'lockSkewingY'];
+
+    function applyLockState(obj, locked) {
+      locked = !!locked;
+      obj.locked = locked;
+      LOCK_KEYS.forEach(k => { obj[k] = locked; });
+      obj.hasControls = !locked;                       // no transform handles while frozen
+      obj.borderColor = locked ? '#F59E0B' : fabric.Object.prototype.borderColor;
+      obj.hoverCursor = locked ? 'not-allowed' : null;
+      if (obj.type === 'i-text' || obj.type === 'textbox') obj.editable = !locked;
+      obj.dirty = true;
+    }
+
+    function setObjectLocked(obj, locked) {
+      applyLockState(obj, locked);
+      obj.setCoords();
+      document.getElementById('statusText').innerText = locked ? `Locked "${obj.name || obj.type}"` : `Unlocked "${obj.name || obj.type}"`;
+    }
+
+    // ===================================================================
+    // 16. Viewport Navigation (zoom / pan)
+    // ===================================================================
+    const ZOOM_MIN = 0.2, ZOOM_MAX = 10;
+    let spacePanActive = false, isPanning = false, panButton = 0, lastPanX = 0, lastPanY = 0, panModeSaved = null;
+
+    function isCanvasTabVisible() {
+      return !document.getElementById('fabricWrapper').classList.contains('hidden');
+    }
+
+    function viewportCenter() {
+      const inv = fabric.util.invertTransform(fCanvas.viewportTransform);
+      return fabric.util.transformPoint(new fabric.Point(fCanvas.getWidth() / 2, fCanvas.getHeight() / 2), inv);
+    }
+
+    function updateZoomUI() {
+      const label = document.getElementById('zoomLabel');
+      const txt = Math.round(fCanvas.getZoom() * 100) + '%';
+      if (label.innerText !== txt) label.innerText = txt;
+    }
+    fCanvas.on('after:render', updateZoomUI);
+
+    function clampZoom(z) { return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)); }
+
+    // Wheel: Ctrl / Alt / Cmd (and trackpad pinch, which browsers report as Ctrl+wheel)
+    // zooms about the pointer. A plain wheel is left alone so the stage can still scroll.
+    fCanvas.on('mouse:wheel', (opt) => {
+      const e = opt.e;
+      if (!(e.ctrlKey || e.altKey || e.metaKey)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const delta = e.deltaY * (e.deltaMode === 1 ? 33 : 1);
+      const zoom = clampZoom(fCanvas.getZoom() * Math.pow(0.999, delta));
+      fCanvas.zoomToPoint(new fabric.Point(e.offsetX, e.offsetY), zoom);
+      fCanvas.requestRenderAll();
+      updateZoomUI();
+    });
+
+    // Pan-mode cursor handling (shared by Space-hold and active drag)
+    function refreshPanMode() {
+      const on = spacePanActive || isPanning;
+      const upper = fCanvas.upperCanvasEl;
+      if (on) {
+        if (!panModeSaved) {
+          panModeSaved = { d: fCanvas.defaultCursor, h: fCanvas.hoverCursor, m: fCanvas.moveCursor, skip: fCanvas.skipTargetFind };
+        }
+        const c = isPanning ? 'grabbing' : 'grab';
+        fCanvas.defaultCursor = fCanvas.hoverCursor = fCanvas.moveCursor = c;
+        fCanvas.skipTargetFind = true;               // no object hover/drag while panning
+        upper.style.cursor = c;
+      } else if (panModeSaved) {
+        fCanvas.defaultCursor = panModeSaved.d;
+        fCanvas.hoverCursor = panModeSaved.h;
+        fCanvas.moveCursor = panModeSaved.m;
+        fCanvas.skipTargetFind = panModeSaved.skip;
+        upper.style.cursor = '';
+        panModeSaved = null;
+      }
+    }
+
+    function setSpacePan(on) {
+      if (on === spacePanActive) return;
+      spacePanActive = on;
+      if (!on && isPanning && panButton === 0) isPanning = false;   // released Space mid-drag
+      refreshPanMode();
+    }
+
+    // Fabric caches the canvas' page offset; the stage can scroll underneath it
+    // (wheel scroll, Fit to Screen), so refresh it before fabric reads pointers.
+    ['mousemove', 'mousedown'].forEach(evt =>
+      fCanvas.wrapperEl.addEventListener(evt, () => fCanvas.calcOffset(), { capture: true, passive: true }));
+
+    // Capture on the canvas wrapper so we win over fabric's own mousedown handling.
+    fCanvas.wrapperEl.addEventListener('mousedown', (e) => {
+      const middle = e.button === 1;
+      const spaceDrag = spacePanActive && e.button === 0;
+      if (!middle && !spaceDrag) return;
+      e.preventDefault();              // also suppresses middle-click autoscroll
+      e.stopImmediatePropagation();
+      isPanning = true;
+      panButton = e.button;
+      lastPanX = e.clientX;
+      lastPanY = e.clientY;
+      refreshPanMode();
+    }, true);
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      fCanvas.relativePan(new fabric.Point(e.clientX - lastPanX, e.clientY - lastPanY));
+      lastPanX = e.clientX;
+      lastPanY = e.clientY;
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (!isPanning || e.button !== panButton) return;
+      isPanning = false;
+      refreshPanMode();
+    });
+
+    function fitToScreen() {
+      const W = fCanvas.getWidth(), H = fCanvas.getHeight(), margin = 40;
+      let bx = 0, by = 0, bw = W, bh = H;
+      const objs = fCanvas.getObjects().filter(o => o.visible);
+      if (objs.length) {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        objs.forEach(o => {
+          const r = o.getBoundingRect(true, true);
+          x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top);
+          x1 = Math.max(x1, r.left + r.width); y1 = Math.max(y1, r.top + r.height);
+        });
+        if (isFinite(x0) && x1 > x0 && y1 > y0) { bx = x0; by = y0; bw = x1 - x0; bh = y1 - y0; }
+      }
+      const z = clampZoom(Math.min((W - margin * 2) / bw, (H - margin * 2) / bh));
+      fCanvas.setViewportTransform([z, 0, 0, z, W / 2 - z * (bx + bw / 2), H / 2 - z * (by + bh / 2)]);
+      document.getElementById('fabricWrapper').scrollIntoView({ block: 'center', inline: 'center' });
+      fCanvas.requestRenderAll();
+      updateZoomUI();
+      document.getElementById('statusText').innerText = `Fit to screen (${Math.round(z * 100)}%)`;
+    }
+
+    function resetZoom() {
+      fCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      updateZoomUI();
+      fCanvas.requestRenderAll();
+      document.getElementById('statusText').innerText = "View reset to 1:1";
+    }
+
+    document.getElementById('btnFitScreen').addEventListener('click', fitToScreen);
+    document.getElementById('btnZoomReset').addEventListener('click', resetZoom);
+
+    // ===================================================================
+    // 17. Alignment toolbar
+    // ===================================================================
+    // One object  -> aligns to the canvas (artboard).
+    // Two or more -> aligns to the selection's combined bounds.
+    function alignSelection(mode) {
+      const status = document.getElementById('statusText');
+      const active = fCanvas.getActiveObject();
+      if (!active) { status.innerText = "Select an object to align."; return; }
+
+      let objs, regroup = false;
+      if (active.type === 'activeSelection') {
+        objs = active.getObjects().filter(o => !o.locked);
+        fCanvas.discardActiveObject();           // objects return to canvas coordinates
+        regroup = true;
+      } else {
+        if (active.locked) { status.innerText = "Layer is locked - unlock it to align."; return; }
+        objs = [active];
+      }
+      if (objs.length === 0) return;
+
+      const rects = objs.map(o => o.getBoundingRect(true, true));   // viewport-independent
+      let ref;
+      if (objs.length > 1) {
+        const x0 = Math.min(...rects.map(r => r.left)), y0 = Math.min(...rects.map(r => r.top));
+        const x1 = Math.max(...rects.map(r => r.left + r.width)), y1 = Math.max(...rects.map(r => r.top + r.height));
+        ref = { left: x0, top: y0, width: x1 - x0, height: y1 - y0 };
+      } else {
+        ref = { left: 0, top: 0, width: fCanvas.getWidth(), height: fCanvas.getHeight() };
+      }
+
+      objs.forEach((o, i) => {
+        const r = rects[i];
+        let dx = 0, dy = 0;
+        switch (mode) {
+          case 'left':    dx = ref.left - r.left; break;
+          case 'hcenter': dx = (ref.left + ref.width / 2) - (r.left + r.width / 2); break;
+          case 'right':   dx = (ref.left + ref.width) - (r.left + r.width); break;
+          case 'top':     dy = ref.top - r.top; break;
+          case 'vcenter': dy = (ref.top + ref.height / 2) - (r.top + r.height / 2); break;
+          case 'bottom':  dy = (ref.top + ref.height) - (r.top + r.height); break;
+        }
+        o.left += dx;
+        o.top += dy;
+        o.setCoords();
+      });
+
+      if (regroup) {
+        if (objs.length > 1) fCanvas.setActiveObject(new fabric.ActiveSelection(objs, { canvas: fCanvas }));
+        else fCanvas.setActiveObject(objs[0]);
+      }
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+      status.innerText = `Aligned ${objs.length > 1 ? objs.length + ' objects' : 'object to canvas'} (${mode}).`;
+    }
+
+    document.querySelectorAll('#alignBar [data-align]').forEach(btn => {
+      btn.addEventListener('click', () => alignSelection(btn.dataset.align));
+    });
+
+    // ===================================================================
+    // 18. Eyedropper (hotkey: I)
+    // ===================================================================
+    let eyedropperFallbackActive = false;
+
+    function setEyedropperUI(on) {
+      document.querySelectorAll('.btn-eyedropper').forEach(b => {
+        b.classList.toggle('bg-amber-500/25', on);
+        b.classList.toggle('text-amber-300', on);
+      });
+    }
+
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Off-screen pixel sampling from whichever of our canvases was clicked.
+    function samplePixelFromEvent(e) {
+      const candidates = [];
+      if (!sCanvas.classList.contains('hidden')) candidates.push(sCanvas);
+      if (isCanvasTabVisible()) candidates.push(fCanvas.lowerCanvasEl);
+      for (const el of candidates) {
+        const r = el.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) continue;
+        if (e.clientX < r.left || e.clientX >= r.right || e.clientY < r.top || e.clientY >= r.bottom) continue;
+        const x = Math.min(el.width - 1, Math.floor((e.clientX - r.left) * el.width / r.width));
+        const y = Math.min(el.height - 1, Math.floor((e.clientY - r.top) * el.height / r.height));
+        const d = el.getContext('2d').getImageData(x, y, 1, 1).data;
+        if (d[3] === 0) continue;
+        return rgbToHex(d[0], d[1], d[2]);
+      }
+      return null;
+    }
+
+    function fallbackSampleHandler(e) {
+      if (e.button !== 0) return;
+      const hex = samplePixelFromEvent(e);
+      if (!hex) return;                       // clicked outside both canvases: ignore
+      e.preventDefault();
+      e.stopImmediatePropagation();           // don't also start a crop / selection
+      applySampledColor(hex);
+      setEyedropperFallback(false);
+    }
+
+    function setEyedropperFallback(on) {
+      eyedropperFallbackActive = on;
+      setEyedropperUI(on);
+      document.body.style.cursor = on ? 'crosshair' : '';
+      if (on) {
+        window.addEventListener('mousedown', fallbackSampleHandler, true);
+        document.getElementById('statusText').innerText = "Eyedropper: click the image or canvas to sample (Esc cancels)";
+      } else {
+        window.removeEventListener('mousedown', fallbackSampleHandler, true);
+      }
+    }
+
+    function applySampledColor(hex) {
+      const active = editableActive();
+      if (!active) return;
+      active.set('fill', hex);
+      document.getElementById('propFillColor').value = hex.toLowerCase();
+      document.getElementById('propFillHex').value = hex.toUpperCase();
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+      updateLayersUI();
+      document.getElementById('statusText').innerText = `Fill set to ${hex.toUpperCase()}`;
+    }
+
+    async function activateEyedropper() {
+      if (eyedropperFallbackActive) { setEyedropperFallback(false); return; }
+      const active = fCanvas.getActiveObject();
+      if (!active) { document.getElementById('statusText').innerText = "Select an object first, then use the Eyedropper (I)."; return; }
+      if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it to change its fill."; return; }
+
+      if (window.EyeDropper) {
+        setEyedropperUI(true);
+        document.getElementById('statusText').innerText = "Eyedropper: click any pixel (Esc cancels)";
+        try {
+          const res = await new window.EyeDropper().open();
+          applySampledColor(res.sRGBHex);
+        } catch (err) { /* user cancelled */ }
+        setEyedropperUI(false);
+      } else {
+        setEyedropperFallback(true);
+      }
+    }
+
+    document.querySelectorAll('.btn-eyedropper').forEach(b => b.addEventListener('click', activateEyedropper));
   </script>
 </body>
 </html>
