@@ -108,6 +108,12 @@
             <span class="text-slate-400 text-[10px] hidden sm:inline">Swatches:</span>
             <div id="swatchListTab1" class="flex items-center gap-1"></div>
           </div>
+          <!-- Punch Out Source Canvas Toggle -->
+          <div class="h-4 w-px bg-slate-700 mx-1"></div>
+          <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 text-[10px] select-none bg-[#14151a] border border-[#2c2f3d] px-2 py-1 rounded hover:border-slate-500 transition" title="Clear cropped pixels from source canvas when extracted to prevent duplicate pixels">
+            <input type="checkbox" id="chkPunchOutSource" class="rounded border-slate-700 text-amber-500 focus:ring-0 bg-[#1c1d24]">
+            <span class="font-medium">Punch Out Source</span>
+          </label>
         </div>
 
         <div id="toolbarCanvas" class="flex items-center gap-2 hidden">
@@ -116,9 +122,12 @@
           <button id="btnRedo" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Redo (Ctrl+Y)"><i data-lucide="redo-2" class="w-3.5 h-3.5"></i></button>
           <div class="h-4 w-px bg-slate-700 mx-1"></div>
 
-          <!-- Group / Ungroup -->
+          <!-- Group / Ungroup & Group by Color -->
           <button id="btnUngroup" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium" title="Explode group into selectable paths">Ungroup Paths</button>
           <button id="btnGroup" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium" title="Group selected elements">Group Selected</button>
+          <button id="btnGroupByColor" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-amber-300 hover:text-white text-[11px] font-medium flex items-center gap-1" title="Merge paths sharing identical fill colors into compound color family groups">
+            <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Group by Color
+          </button>
           <div class="h-4 w-px bg-slate-700 mx-1"></div>
 
           <!-- Add Shapes Dropdown -->
@@ -153,9 +162,18 @@
         </div>
 
         <div id="toolbarLowerThird" class="flex items-center gap-2 hidden">
-          <span class="text-slate-400 text-[11px]">SMPTE 1920x1080 Viewport</span>
-          <button id="btnExport1080pPNG" class="px-3 py-1 rounded bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 flex items-center gap-1">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download 1080p Broadcast PNG
+          <span class="text-slate-400 text-[11px]">Layout:</span>
+          <div id="ltPresetPills" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[10px] font-medium" title="Broadcast lower-third layout preset">
+            <button data-lt-preset="compact-pill" class="px-2.5 py-1 bg-amber-500/25 text-amber-300 font-semibold transition" title="Rounded floating badge in bottom-left title-safe area">Compact Pill</button>
+            <button data-lt-preset="extruded-split" class="px-2.5 py-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Dual-tier angled banner matching extruded typography">Extruded Split-Bar</button>
+            <button data-lt-preset="corporate-minimal" class="px-2.5 py-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Clean hairline accent bar, dark translucent backdrop">Corporate Minimal</button>
+          </div>
+          <div class="h-4 w-px bg-slate-700 mx-1"></div>
+          <button id="btnExport1080pPNG" class="px-3 py-1 rounded bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 flex items-center gap-1 text-[11px]">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download 1080p PNG
+          </button>
+          <button id="btnExportOBSHtml" class="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-1 text-[11px]" title="Export animated OBS browser source HTML overlay">
+            <i data-lucide="tv" class="w-3.5 h-3.5"></i> Export OBS HTML
           </button>
         </div>
 
@@ -202,14 +220,8 @@
           <div class="absolute inset-[10%] border border-cyan-500/30 pointer-events-none flex items-start justify-end p-2 text-[10px] font-mono text-cyan-400">
             TITLE SAFE (80%)
           </div>
-          <div id="ltBannerBox" class="relative z-10 flex items-center gap-4 bg-[#0f172a] border border-amber-500/50 p-4 rounded-2xl shadow-2xl min-w-[540px]">
-            <div id="ltIconSlot" class="w-20 h-20 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center overflow-hidden shrink-0">
-              <i data-lucide="image" class="w-8 h-8 text-amber-400"></i>
-            </div>
-            <div class="flex-1">
-              <div id="ltRoleDisplay" class="text-xs uppercase font-extrabold tracking-wider text-amber-400 mb-0.5">SPEAKER ROLE / TITLE</div>
-              <div id="ltNameDisplay" class="text-2xl font-black tracking-tight text-white">SPEAKER NAME HERE</div>
-            </div>
+          <div id="ltMountContainer" class="relative z-10 w-full flex items-end">
+            <!-- Dynamic Lower Third generated by updateLowerThirdPreview() -->
           </div>
         </div>
       </div>
@@ -226,94 +238,200 @@
 
     <!-- RIGHT: INSPECTOR & LAYERS -->
     <div class="w-80 border-l border-[#24252f] bg-[#18191f]/70 backdrop-blur p-4 flex flex-col justify-between overflow-y-auto">
-      <div>
-        <div class="flex items-center justify-between pb-3 border-b border-[#252733] mb-3">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Property Inspector</h2>
-          <span id="layerCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0 Layers</span>
-        </div>
-
-        <!-- Dynamic Controls -->
-        <div class="space-y-3 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
-          <!-- Brand Swatches -->
-          <div class="pb-2.5 border-b border-slate-800">
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
-                <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Brand Swatches
-              </label>
-              <button id="btnRefreshPalette" class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1" title="Extract palette from current source crop or image">
-                <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Refresh
-              </button>
-            </div>
-            <div id="swatchListInspector" class="flex flex-wrap gap-1.5 items-center">
-              <span class="text-[10px] text-slate-500 italic">Load an image to extract palette</span>
-            </div>
+      <!-- RIGHT PANEL 1: CANVAS & PROPERTY INSPECTOR -->
+      <div id="panelCanvasInspector" class="flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center justify-between pb-3 border-b border-[#252733] mb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Property Inspector</h2>
+            <span id="layerCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0 Layers</span>
           </div>
 
-          <!-- Fill Color -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-slate-400 text-[11px]">Fill Color:</label>
-              <input type="text" id="propFillHex" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
-            </div>
-            <input type="color" id="propFillColor" value="#F59E0B" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+          <!-- Placement Snapping -->
+          <div class="mb-3 flex items-center justify-between bg-[#14151a] p-2.5 rounded-xl border border-[#262834]">
+            <label class="flex items-center gap-2 cursor-pointer text-slate-300 text-[11px] select-none" title="Place extracted layers at their exact 1:1 pixel coordinates from the source image">
+              <input type="checkbox" id="chkKeepCoords" checked class="rounded border-slate-700 text-amber-500 focus:ring-0 bg-[#1c1d24]">
+              <span class="font-medium">Keep Original Coordinates</span>
+            </label>
+            <span class="text-[9px] text-amber-400 font-mono">1:1 Snap</span>
           </div>
 
-          <!-- Stroke Color & Width -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-slate-400 text-[11px]">Stroke:</label>
-              <input type="color" id="propStrokeColor" value="#000000" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
-            </div>
-            <div class="flex items-center gap-2">
-              <input type="range" id="propStrokeWidth" min="0" max="30" value="0" class="w-full accent-amber-500">
-              <span id="strokeWidthVal" class="font-mono text-[11px] text-slate-400 w-6">0</span>
-            </div>
-          </div>
-
-          <!-- Typography Controls -->
-          <div id="textControls" class="space-y-2 pt-2 border-t border-slate-800">
-            <div>
-              <label class="text-slate-400 text-[11px]">Font Family:</label>
-              <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
-                <option value="Impact">Impact (Headline)</option>
-                <option value="Bebas Neue">Bebas Neue (Condensed)</option>
-                <option value="Cooper Black">Cooper Black (Retro)</option>
-                <option value="Montserrat">Montserrat (Geometric Sans)</option>
-                <option value="Arial">Arial</option>
-                <option value="Georgia">Georgia (Serif)</option>
-                <option value="Courier New">Courier New</option>
-              </select>
-            </div>
-            <div>
-              <div class="flex items-center justify-between">
-                <label class="text-slate-400 text-[11px]">Font Size:</label>
-                <span id="fontSizeVal" class="font-mono text-[11px] text-slate-400">72</span>
+          <!-- Dynamic Controls -->
+          <div class="space-y-3 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
+            <!-- Brand Swatches -->
+            <div class="pb-2.5 border-b border-slate-800">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
+                  <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Brand Swatches
+                </label>
+                <button id="btnRefreshPalette" class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1" title="Extract palette from current source crop or image">
+                  <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Refresh
+                </button>
               </div>
-              <input type="range" id="propFontSize" min="8" max="250" value="72" class="w-full accent-amber-500">
+              <div id="swatchListInspector" class="flex flex-wrap gap-1.5 items-center">
+                <span class="text-[10px] text-slate-500 italic">Load an image to extract palette</span>
+              </div>
+            </div>
+
+            <!-- Fill Color -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-slate-400 text-[11px]">Fill Color:</label>
+                <input type="text" id="propFillHex" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
+              </div>
+              <input type="color" id="propFillColor" value="#F59E0B" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+            </div>
+
+            <!-- Stroke Color & Width -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-slate-400 text-[11px]">Stroke:</label>
+                <input type="color" id="propStrokeColor" value="#000000" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="range" id="propStrokeWidth" min="0" max="30" value="0" class="w-full accent-amber-500">
+                <span id="strokeWidthVal" class="font-mono text-[11px] text-slate-400 w-6">0</span>
+              </div>
+            </div>
+
+            <!-- Typography Controls -->
+            <div id="textControls" class="space-y-2 pt-2 border-t border-slate-800">
+              <div>
+                <label class="text-slate-400 text-[11px]">Font Family:</label>
+                <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
+                  <option value="Impact">Impact (Headline)</option>
+                  <option value="Bebas Neue">Bebas Neue (Condensed)</option>
+                  <option value="Cooper Black">Cooper Black (Retro)</option>
+                  <option value="Montserrat">Montserrat (Geometric Sans)</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Georgia">Georgia (Serif)</option>
+                  <option value="Courier New">Courier New</option>
+                </select>
+              </div>
+              <div>
+                <div class="flex items-center justify-between">
+                  <label class="text-slate-400 text-[11px]">Font Size:</label>
+                  <span id="fontSizeVal" class="font-mono text-[11px] text-slate-400">72</span>
+                </div>
+                <input type="range" id="propFontSize" min="8" max="250" value="72" class="w-full accent-amber-500">
+              </div>
+            </div>
+
+            <!-- Layer Ordering -->
+            <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1 text-[11px]">
+              <button id="btnBringForward" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Forward</button>
+              <button id="btnSendBackward" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Backward</button>
+              <button id="btnDeleteSelected" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-2 py-1 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             </div>
           </div>
 
-          <!-- Layer Ordering -->
-          <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1 text-[11px]">
-            <button id="btnBringForward" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Forward</button>
-            <button id="btnSendBackward" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Backward</button>
-            <button id="btnDeleteSelected" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-2 py-1 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-          </div>
+          <!-- Layers Stack -->
+          <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-4 mb-2">Canvas Layers</h3>
+          <div id="layersList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
         </div>
 
-        <!-- Layers Stack -->
-        <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-4 mb-2">Canvas Layers</h3>
-        <div id="layersList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+        <!-- Export Footer -->
+        <div class="pt-3 border-t border-[#252733] space-y-1.5">
+          <button id="btnExportSVG" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-1.5">
+            <i data-lucide="bezier" class="w-3.5 h-3.5 text-indigo-400"></i> Export SVG (.SVG)
+          </button>
+          <button id="btnExportZIP" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-1.5">
+            <i data-lucide="archive" class="w-3.5 h-3.5 text-amber-400"></i> Export PNG Slices (.ZIP)
+          </button>
+        </div>
       </div>
 
-      <!-- Export Footer -->
-      <div class="pt-3 border-t border-[#252733] space-y-1.5">
-        <button id="btnExportSVG" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-1.5">
-          <i data-lucide="bezier" class="w-3.5 h-3.5 text-indigo-400"></i> Export SVG (.SVG)
-        </button>
-        <button id="btnExportZIP" class="w-full bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold py-2 rounded-lg border border-[#2e313d] transition flex items-center justify-center gap-1.5">
-          <i data-lucide="archive" class="w-3.5 h-3.5 text-amber-400"></i> Export PNG Slices (.ZIP)
-        </button>
+      <!-- RIGHT PANEL 2: LOWER THIRD STUDIO CONTROLS -->
+      <div id="panelLowerThirdInspector" class="hidden flex flex-col justify-between h-full">
+        <div>
+          <div class="flex items-center justify-between pb-3 border-b border-[#252733] mb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Lower Third Studio</h2>
+            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono">SMPTE 1080p</span>
+          </div>
+
+          <!-- Dynamic Live Text Controls -->
+          <div class="space-y-2.5 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
+            <div>
+              <label class="text-slate-400 text-[11px] font-semibold">Presenter Name:</label>
+              <input type="text" id="ltInputName" value="KAI MIKO" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1.5 rounded text-xs text-white font-bold mt-1 focus:border-amber-400">
+            </div>
+            <div>
+              <label class="text-slate-400 text-[11px] font-semibold">Role / Title:</label>
+              <input type="text" id="ltInputRole" value="FOUNDER & LEAD SLICER" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1.5 rounded text-xs text-slate-200 mt-1 focus:border-amber-400">
+            </div>
+            <div>
+              <label class="text-slate-400 text-[11px] font-semibold">Topic / Handle:</label>
+              <input type="text" id="ltInputTopic" value="@mikostudio • #TooFunny" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1.5 rounded text-xs text-slate-300 mt-1 focus:border-amber-400">
+            </div>
+          </div>
+
+          <!-- Theming & Palette Controls -->
+          <div class="mt-3 space-y-2.5 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
+            <button id="btnLtThemeFromArtwork" class="w-full bg-[#20222a] hover:bg-[#282a35] text-amber-300 border border-amber-500/30 text-xs font-semibold py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Theme from Artwork
+            </button>
+
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+              <div>
+                <label class="text-slate-400 text-[10px] block mb-0.5">Banner Fill:</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="color" id="ltColBg" value="#0F172A" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0">
+                  <input type="text" id="ltHexBg" value="#0F172A" class="w-full bg-[#1c1d24] border border-slate-700 px-1 py-0.5 rounded font-mono text-[10px] text-slate-300 text-center uppercase">
+                </div>
+              </div>
+              <div>
+                <label class="text-slate-400 text-[10px] block mb-0.5">Accent / Border:</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="color" id="ltColAccent" value="#F59E0B" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0">
+                  <input type="text" id="ltHexAccent" value="#F59E0B" class="w-full bg-[#1c1d24] border border-slate-700 px-1 py-0.5 rounded font-mono text-[10px] text-slate-300 text-center uppercase">
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-slate-400 text-[10px] block mb-0.5">Name Text:</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="color" id="ltColTextName" value="#FFFFFF" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0">
+                  <input type="text" id="ltHexTextName" value="#FFFFFF" class="w-full bg-[#1c1d24] border border-slate-700 px-1 py-0.5 rounded font-mono text-[10px] text-slate-300 text-center uppercase">
+                </div>
+              </div>
+              <div>
+                <label class="text-slate-400 text-[10px] block mb-0.5">Role Text:</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="color" id="ltColTextRole" value="#F59E0B" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer shrink-0">
+                  <input type="text" id="ltHexTextRole" value="#F59E0B" class="w-full bg-[#1c1d24] border border-slate-700 px-1 py-0.5 rounded font-mono text-[10px] text-slate-300 text-center uppercase">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mounted Badge Preview Card -->
+          <div class="mt-3 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-slate-400 text-[11px] font-semibold">Mounted Badge:</span>
+              <button id="btnClearLtBadge" class="text-[10px] text-red-400 hover:text-red-300" title="Remove mounted badge">Clear</button>
+            </div>
+            <div id="ltBadgeStatusBox" class="flex items-center gap-2.5 p-2 rounded-lg bg-[#1c1d24] border border-slate-800">
+              <div id="ltBadgePreviewThumb" class="w-10 h-10 rounded-md bg-amber-500/10 border border-amber-500/30 flex items-center justify-center overflow-hidden shrink-0">
+                <i data-lucide="image" class="w-5 h-5 text-amber-400"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div id="ltBadgeNameText" class="text-[11px] font-medium text-slate-200 truncate">Default Icon</div>
+                <div class="text-[10px] text-slate-500">From canvas "Make LT"</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Hub -->
+        <div class="pt-3 border-t border-[#252733] space-y-1.5">
+          <button id="btnExport1080pPNGSide" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download 1080p PNG
+          </button>
+          <button id="btnExportOBSHtmlSide" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm" title="Self-contained animated OBS browser source overlay">
+            <i data-lucide="tv" class="w-3.5 h-3.5"></i> Export OBS HTML Overlay
+          </button>
+        </div>
       </div>
     </div>
   </main>
@@ -606,7 +724,17 @@
       loadBrandPalette(b64);
     });
 
+    // Persistent punch-out masking for Tab 1 source canvas
+    let sourceHoles = [];
+
+    function punchOutSourceRegion(bounds) {
+      if (!bounds) return;
+      sourceHoles.push({ x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h });
+      redrawSource();
+    }
+
     sourceImg.onload = () => {
+      sourceHoles = [];
       sCanvas.width = sourceImg.width;
       sCanvas.height = sourceImg.height;
       redrawSource();
@@ -626,6 +754,7 @@
       reader.onload = (evt) => {
         sourceImg = new Image();
         sourceImg.onload = () => {
+          sourceHoles = [];
           sCanvas.width = sourceImg.width;
           sCanvas.height = sourceImg.height;
           redrawSource();
@@ -678,6 +807,10 @@
     function redrawSource() {
       sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
       sCtx.drawImage(sourceImg, 0, 0);
+      // Persistent punch-out holes: clear underlying pixels so checkerboard shows through
+      sourceHoles.forEach(h => {
+        sCtx.clearRect(h.x, h.y, h.w, h.h);
+      });
       if (selectedCrop) {
         sCtx.strokeStyle = '#f59e0b';
         sCtx.lineWidth = 2;
@@ -692,6 +825,85 @@
       tempC.height = crop.h;
       tempC.getContext('2d').drawImage(sourceImg, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
       return { b64: tempC.toDataURL('image/png'), bounds: crop };
+    }
+
+    // Color & Semantic Naming Helpers
+    function hexToHsl(hex) {
+      if (!hex || typeof hex !== 'string') return { h: 0, s: 0, l: 0 };
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      if (c.length !== 6) return { h: 0, s: 0, l: 0 };
+      const r = parseInt(c.substring(0, 2), 16) / 255;
+      const g = parseInt(c.substring(2, 4), 16) / 255;
+      const b = parseInt(c.substring(4, 6), 16) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h *= 60;
+      }
+      return { h, s, l };
+    }
+
+    function getSemanticPathName(fillHex, index, totalCount, width, height) {
+      const normHex = (typeof fillHex === 'string' && fillHex.startsWith('#')) ? fillHex.toUpperCase() : '#777777';
+      const { h, s, l } = hexToHsl(normHex);
+
+      let colorName = "Shade";
+      if (l < 0.12) {
+        colorName = "Deep Shadow";
+      } else if (l > 0.90) {
+        colorName = "White Highlight";
+      } else if (s < 0.16) {
+        colorName = l > 0.6 ? "Light Slate" : "Neutral Charcoal";
+      } else if (h < 15 || h >= 345) {
+        colorName = l < 0.4 ? "Crimson Shadow" : "Ruby Red";
+      } else if (h < 45) {
+        colorName = l < 0.4 ? "Burnt Amber" : "Flame Orange";
+      } else if (h < 68) {
+        colorName = l > 0.7 ? "Pale Lemon" : "Gold Face";
+      } else if (h < 160) {
+        colorName = l < 0.35 ? "Forest Green" : "Emerald Green";
+      } else if (h < 200) {
+        colorName = "Cyan Teal";
+      } else if (h < 260) {
+        colorName = l < 0.35 ? "Navy Blue" : "Cobalt Blue";
+      } else if (h < 310) {
+        colorName = "Royal Purple";
+      } else {
+        colorName = "Hot Magenta";
+      }
+
+      let role = "Path";
+      const area = (width || 0) * (height || 0);
+      if (index === 0 || l < 0.15) {
+        role = "Border";
+      } else if (l > 0.85 || area < 200) {
+        role = "Detail";
+      } else if (index < 3) {
+        role = "Base";
+      } else {
+        role = "Tone";
+      }
+
+      return `${colorName} ${role} (${normHex})`;
+    }
+
+    function getTypeTag(type) {
+      if (!type) return 'obj';
+      if (type === 'path') return 'path';
+      if (type === 'group') return 'group';
+      if (type.includes('text')) return 'text';
+      if (type === 'image') return 'img';
+      if (type === 'rect') return 'rect';
+      if (type === 'circle') return 'circ';
+      return type.substring(0, 4);
     }
 
     // Tight-bounds helpers --------------------------------------------------
@@ -769,6 +981,11 @@
             if (items.length === 0) items = objects.filter(o => !isSpeck(o));
             if (items.length === 0) items = objects;
 
+            // Assign semantic color and role names to each individual path
+            items.forEach((item, idx) => {
+              item.name = getSemanticPathName(item.fill, idx, items.length, item.width, item.height);
+            });
+
             // Group using ONLY the artwork: strip the SVG viewport size/position
             // from `options`, otherwise fabric forces the full (padded) viewBox
             // dimensions onto the group instead of the paths' true extent.
@@ -781,26 +998,48 @@
             // path rects so the selection box hugs the visible artwork.
             snapGroupToArtwork(group);
 
-            // Scale to readable canvas proportions
-            group.scaleToWidth(Math.min(450, fCanvas.getWidth() * 0.6));
-            const vc = viewportCenter();
-            group.set({
-              left: vc.x,
-              top: vc.y,
-              originX: 'center',
-              originY: 'center',
-              padding: 0,
-              name: `Vector Artwork (${items.length} paths)`
-            });
+            const keepCoords = document.getElementById('chkKeepCoords')?.checked ?? true;
+            if (keepCoords) {
+              // 1:1 pixel scale and exact placement matching the source crop bounds
+              group.set({
+                left: bounds.x + (group.left || 0),
+                top: bounds.y + (group.top || 0),
+                originX: 'left',
+                originY: 'top',
+                scaleX: 1,
+                scaleY: 1,
+                padding: 0,
+                name: `Vector Artwork (${items.length} paths)`
+              });
+            } else {
+              // Center in viewport
+              const vc = viewportCenter();
+              group.set({
+                left: vc.x,
+                top: vc.y,
+                originX: 'center',
+                originY: 'center',
+                scaleX: 1,
+                scaleY: 1,
+                padding: 0,
+                name: `Vector Artwork (${items.length} paths)`
+              });
+            }
 
             fCanvas.add(group);
             group.setCoords();   // 8-point handles hug the artwork immediately
             fCanvas.setActiveObject(group);
             fCanvas.renderAll();
             saveCanvasState();
+
+            // Punch out source canvas if requested
+            if (document.getElementById('chkPunchOutSource')?.checked) {
+              punchOutSourceRegion(bounds);
+            }
+
             switchTab('canvas');
             updateLayersUI();
-            document.getElementById('statusText').innerText = `Assembled ${items.length} vector paths cleanly!`;
+            document.getElementById('statusText').innerText = `Assembled ${items.length} vector paths at 1:1 scale!`;
           });
         } else {
           alert('Vectorize error: ' + (data.error || 'Server failed to vectorize.'));
@@ -866,6 +1105,78 @@
       document.getElementById('statusText').innerText = "Grouped selected elements!";
     });
 
+    // Toolbar "Group by Color" Button:
+    // Merges paths sharing identical fill colors into compound color family groups with 1 click
+    document.getElementById('btnGroupByColor').addEventListener('click', () => {
+      const status = document.getElementById('statusText');
+      let targets = [];
+      const active = fCanvas.getActiveObject();
+
+      if (active && active.type === 'group') {
+        active.toActiveSelection();
+        const sel = fCanvas.getActiveObject();
+        if (sel && sel.type === 'activeSelection') {
+          targets = sel.getObjects().slice();
+          fCanvas.discardActiveObject();
+        }
+      } else if (active && active.type === 'activeSelection') {
+        targets = active.getObjects().slice();
+        fCanvas.discardActiveObject();
+      } else {
+        targets = fCanvas.getObjects().slice();
+      }
+
+      const paths = targets.filter(o => !o.locked);
+      if (paths.length < 2) {
+        status.innerText = "Select a group or multiple paths to group by color.";
+        return;
+      }
+
+      const colorBuckets = new Map();
+      paths.forEach(p => {
+        const fill = (typeof p.fill === 'string' && p.fill) ? p.fill.toUpperCase() : '#NONE';
+        if (!colorBuckets.has(fill)) colorBuckets.set(fill, []);
+        colorBuckets.get(fill).push(p);
+      });
+
+      if (colorBuckets.size === paths.length) {
+        status.innerText = "All selected paths already have unique colors.";
+        return;
+      }
+
+      paths.forEach(p => fCanvas.remove(p));
+
+      const newGroups = [];
+      let familyCount = 0;
+      colorBuckets.forEach((bucket, hex) => {
+        if (bucket.length > 1) {
+          familyCount++;
+          const sample = bucket[0];
+          const famName = getSemanticPathName(hex, 0, 10, sample.width, sample.height).split(' (')[0];
+          const grp = new fabric.Group(bucket, {
+            name: `${famName} Family (${hex} • ${bucket.length} paths)`
+          });
+          snapGroupToArtwork(grp);
+          fCanvas.add(grp);
+          newGroups.push(grp);
+        } else {
+          fCanvas.add(bucket[0]);
+          newGroups.push(bucket[0]);
+        }
+      });
+
+      if (newGroups.length > 1) {
+        fCanvas.setActiveObject(new fabric.ActiveSelection(newGroups, { canvas: fCanvas }));
+      } else if (newGroups.length === 1) {
+        fCanvas.setActiveObject(newGroups[0]);
+      }
+
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+      updateLayersUI();
+      status.innerText = `Merged into ${familyCount} color families (${paths.length} total paths)!`;
+    });
+
     // Double-click: isolate the single path under the cursor.
     //  - on a multi-selection (e.g. just after Ungroup) -> select only that path
     //  - on a group -> explode it, then select only the path under the cursor
@@ -909,9 +1220,16 @@
         const fill = data.fill || '#F59E0B';
         const fontSize = data.fontSize || 72;
 
+        const keepCoords = document.getElementById('chkKeepCoords')?.checked ?? true;
+        const vc = viewportCenter();
+        const textLeft = keepCoords ? bounds.x : vc.x;
+        const textTop = keepCoords ? bounds.y : vc.y;
+
         const iText = new fabric.IText(textStr, {
-          left: 200,
-          top: 200,
+          left: textLeft,
+          top: textTop,
+          originX: keepCoords ? 'left' : 'center',
+          originY: keepCoords ? 'top' : 'center',
           fontFamily: fontFamily,
           fontSize: fontSize,
           fill: fill,
@@ -922,6 +1240,11 @@
         fCanvas.setActiveObject(iText);
         fCanvas.renderAll();
         saveCanvasState();
+
+        if (document.getElementById('chkPunchOutSource')?.checked) {
+          punchOutSourceRegion(bounds);
+        }
+
         switchTab('canvas');
         updateLayersUI();
 
@@ -948,7 +1271,7 @@
 
     // 7b. Slice by Color Pipeline (Isolate Swatch Pixels ΔE < 25)
     document.getElementById('btnSliceByColor').addEventListener('click', async () => {
-      const { b64 } = getCroppedBase64();
+      const { b64, bounds } = getCroppedBase64();
       const targetColor = selectedSliceColor || document.getElementById('propFillHex').value || '#F59E0B';
       const status = document.getElementById('statusText');
       status.innerText = `Slicing pixels matching ${targetColor} (ΔE < 25)...`;
@@ -966,21 +1289,38 @@
         }
 
         fabric.Image.fromURL(data.png, (img) => {
-          const s = Math.min(1, (fCanvas.getWidth() * 0.7) / data.w, (fCanvas.getHeight() * 0.7) / data.h);
+          const keepCoords = document.getElementById('chkKeepCoords')?.checked ?? true;
           const vc = viewportCenter();
-          img.set({
-            left: vc.x,
-            top: vc.y,
-            originX: 'center',
-            originY: 'center',
-            scaleX: s,
-            scaleY: s,
-            name: `Color Slice (${data.color || targetColor})`
-          });
+          if (keepCoords) {
+            img.set({
+              left: bounds.x,
+              top: bounds.y,
+              originX: 'left',
+              originY: 'top',
+              scaleX: 1,
+              scaleY: 1,
+              name: `Color Slice (${data.color || targetColor})`
+            });
+          } else {
+            img.set({
+              left: vc.x,
+              top: vc.y,
+              originX: 'center',
+              originY: 'center',
+              scaleX: 1,
+              scaleY: 1,
+              name: `Color Slice (${data.color || targetColor})`
+            });
+          }
           fCanvas.add(img);
           fCanvas.setActiveObject(img);
           fCanvas.renderAll();
           saveCanvasState();
+
+          if (document.getElementById('chkPunchOutSource')?.checked) {
+            punchOutSourceRegion(bounds);
+          }
+
           switchTab('canvas');
           updateLayersUI();
           status.innerText = `Isolated ${data.count} pixels into layer "Color Slice (${data.color || targetColor})"!`;
@@ -994,7 +1334,7 @@
     // /api/ai_segment returns { layers: [{ name, png (data URL), x, y, w, h }] }
     // where x/y/w/h are relative to the submitted crop.
     document.getElementById('btnCutoutAI').addEventListener('click', async () => {
-      const { b64 } = getCroppedBase64();
+      const { b64, bounds } = getCroppedBase64();
       const status = document.getElementById('statusText');
       status.innerText = "Running local u2net background isolation...";
 
@@ -1011,20 +1351,22 @@
           return;
         }
 
-        // Union box of all returned pieces (crop-relative), used to scale + centre them as one unit
+        // Union box of all returned pieces (crop-relative)
         const ux0 = Math.min(...layers.map(l => l.x)), uy0 = Math.min(...layers.map(l => l.y));
         const ux1 = Math.max(...layers.map(l => l.x + l.w)), uy1 = Math.max(...layers.map(l => l.y + l.h));
         const uw = ux1 - ux0, uh = uy1 - uy0;
-        const s = Math.min(1, (fCanvas.getWidth() * 0.8) / uw, (fCanvas.getHeight() * 0.8) / uh);
+        const keepCoords = document.getElementById('chkKeepCoords')?.checked ?? true;
         const vc = viewportCenter();
-        const baseX = vc.x - (uw * s) / 2, baseY = vc.y - (uh * s) / 2;
+        const baseX = keepCoords ? bounds.x : (vc.x - uw / 2);
+        const baseY = keepCoords ? bounds.y : (vc.y - uh / 2);
 
         const imgs = await Promise.all(layers.map(l => new Promise(res => {
           fabric.Image.fromURL(l.png, (img) => {
             img.set({
-              left: baseX + (l.x - ux0) * s,
-              top: baseY + (l.y - uy0) * s,
-              scaleX: s, scaleY: s,
+              left: keepCoords ? (bounds.x + l.x) : (baseX + (l.x - ux0)),
+              top: keepCoords ? (bounds.y + l.y) : (baseY + (l.y - uy0)),
+              scaleX: 1,
+              scaleY: 1,
               name: l.name || "AI Cutout Layer"
             });
             res(img);
@@ -1034,9 +1376,15 @@
         imgs.forEach(img => fCanvas.add(img));
         fCanvas.setActiveObject(imgs[imgs.length - 1]);
         fCanvas.renderAll();
+        saveCanvasState();
+
+        if (document.getElementById('chkPunchOutSource')?.checked) {
+          punchOutSourceRegion(bounds);
+        }
+
         switchTab('canvas');
         updateLayersUI();
-        status.innerText = `AI cutout: ${imgs.length} layer${imgs.length > 1 ? 's' : ''} generated!`;
+        status.innerText = `AI cutout: ${imgs.length} layer${imgs.length > 1 ? 's' : ''} generated at 1:1 scale!`;
       } catch (err) {
         alert("Failed to reach /api/ai_segment.");
       }
@@ -1256,19 +1604,23 @@
       objects.slice().reverse().forEach((obj) => {
         const hidden = obj.visible === false;
         const locked = !!obj.locked;
-        const fillCss = (typeof obj.fill === 'string' && obj.fill) ? obj.fill : '#fff';
+        const fillCss = (typeof obj.fill === 'string' && obj.fill) ? obj.fill : '#777';
+        const hexTag = (typeof obj.fill === 'string' && obj.fill.startsWith('#')) ? obj.fill.toUpperCase() : '';
+        const typeTag = getTypeTag(obj.type);
 
         const row = document.createElement('div');
         row._obj = obj;
         row.className = "layer-row flex items-center justify-between p-2 rounded-lg bg-[#1c1d24] border border-[#2b2d39] text-xs hover:border-slate-600 transition cursor-pointer" + (hidden ? " opacity-40" : "");
         row.innerHTML = `
-          <div class="flex items-center gap-1.5 min-w-0">
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
             <button data-act="vis" class="shrink-0 ${hidden ? 'text-slate-500' : 'text-slate-300 hover:text-white'}" title="${hidden ? 'Show layer' : 'Hide layer'}">${hidden ? SVG_ICONS.eyeOff : SVG_ICONS.eye}</button>
             <button data-act="lock" class="shrink-0 ${locked ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}" title="${locked ? 'Unlock layer' : 'Lock layer'}">${locked ? SVG_ICONS.lock : SVG_ICONS.unlock}</button>
             <span class="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0" style="background-color: ${escapeHtml(fillCss)}"></span>
+            ${hexTag ? `<span class="font-mono text-[9px] px-1 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 shrink-0">${hexTag}</span>` : ''}
+            <span class="text-[9px] text-slate-500 font-mono shrink-0">[${typeTag}]</span>
             <span data-act="name" class="truncate font-medium text-slate-200 text-[11px]" title="Double-click to rename">${escapeHtml(obj.name || obj.type)}</span>
           </div>
-          <button onclick="mountToLowerThird(this)" class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1 py-0.5 rounded border border-indigo-500/30 shrink-0 ml-1">Make LT</button>
+          <button onclick="mountToLowerThird(this)" class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1 py-0.5 rounded border border-indigo-500/30 shrink-0 ml-1 hover:bg-indigo-500/30" title="Mount artwork as lower third badge">Make LT</button>
         `;
 
         row.querySelector('[data-act="vis"]').onclick = (e) => {
@@ -1344,14 +1696,30 @@
     }
 
     window.mountToLowerThird = (btn) => {
-      const idx = Array.from(btn.closest('#layersList').children).indexOf(btn.closest('div'));
-      const obj = fCanvas.getObjects().slice().reverse()[idx];
+      const row = btn.closest('.layer-row');
+      const obj = row ? row._obj : null;
       if (!obj) return;
 
+      mountedBadgeDataUrl = obj.toDataURL({ format: 'png', multiplier: 2 });
+      mountedBadgeName = obj.name || 'Mounted Artwork';
+
+      // Update badge preview card in inspector
+      const thumb = document.getElementById('ltBadgePreviewThumb');
+      const nameEl = document.getElementById('ltBadgeNameText');
+      if (thumb) thumb.innerHTML = `<img src="${mountedBadgeDataUrl}" class="w-full h-full object-contain">`;
+      if (nameEl) nameEl.innerText = mountedBadgeName;
+
+      // Auto-theme with object's fill color if available
+      if (obj.fill && typeof obj.fill === 'string' && obj.fill.startsWith('#')) {
+        document.getElementById('ltColAccent').value = obj.fill;
+        document.getElementById('ltHexAccent').value = obj.fill.toUpperCase();
+        document.getElementById('ltColTextRole').value = obj.fill;
+        document.getElementById('ltHexTextRole').value = obj.fill.toUpperCase();
+      }
+
+      updateLowerThirdPreview();
       switchTab('lowerthird');
-      const slot = document.getElementById('ltIconSlot');
-      slot.innerHTML = `<img src="${obj.toDataURL()}" class="max-w-full max-h-full object-contain">`;
-      document.getElementById('statusText').innerText = `Mounted ${obj.name} as lower-third badge.`;
+      document.getElementById('statusText').innerText = `Mounted "${mountedBadgeName}" into Lower Third Studio!`;
     };
 
     // 13. Tab Navigation
@@ -1374,21 +1742,31 @@
       document.getElementById('alignBar').classList.add('hidden');
       document.getElementById('viewportWidget').classList.add('hidden');
 
+      const panelCanvas = document.getElementById('panelCanvasInspector');
+      const panelLT = document.getElementById('panelLowerThirdInspector');
+
       if (t === 'deconstruct') {
         document.getElementById('tabDeconstruct').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
         document.getElementById('toolbarDeconstruct').classList.remove('hidden');
         sCanvas.classList.remove('hidden');
+        panelCanvas.classList.remove('hidden');
+        panelLT.classList.add('hidden');
       } else if (t === 'canvas') {
         document.getElementById('tabCanvas').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
         document.getElementById('toolbarCanvas').classList.remove('hidden');
         document.getElementById('fabricWrapper').classList.remove('hidden');
         document.getElementById('alignBar').classList.remove('hidden');
         document.getElementById('viewportWidget').classList.remove('hidden');
+        panelCanvas.classList.remove('hidden');
+        panelLT.classList.add('hidden');
         fCanvas.renderAll();
       } else if (t === 'lowerthird') {
         document.getElementById('tabLowerThird').className = "px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5";
         document.getElementById('toolbarLowerThird').classList.remove('hidden');
         document.getElementById('lowerThirdStage').classList.remove('hidden');
+        panelCanvas.classList.add('hidden');
+        panelLT.classList.remove('hidden');
+        updateLowerThirdPreview();
       }
     }
 
@@ -1480,33 +1858,496 @@
       a.click();
     });
 
-    document.getElementById('btnExport1080pPNG').addEventListener('click', () => {
+    // ===================================================================
+    // 14b. Broadcast Lower Third Studio Engine (Tab 3)
+    // ===================================================================
+    let currentLtPreset = 'compact-pill';
+    let mountedBadgeDataUrl = null;
+    let mountedBadgeName = 'Default Icon';
+
+    function setLtPreset(preset) {
+      currentLtPreset = preset;
+      document.querySelectorAll('#ltPresetPills [data-lt-preset]').forEach(btn => {
+        const on = btn.dataset.ltPreset === preset;
+        btn.classList.toggle('bg-amber-500/25', on);
+        btn.classList.toggle('text-amber-300', on);
+        btn.classList.toggle('font-semibold', on);
+        btn.classList.toggle('text-slate-400', !on);
+      });
+      updateLowerThirdPreview();
+    }
+
+    document.querySelectorAll('#ltPresetPills [data-lt-preset]').forEach(btn => {
+      btn.addEventListener('click', () => setLtPreset(btn.dataset.ltPreset));
+    });
+
+    // Two-way sync for Lower Third color & text inputs
+    ['ltInputName', 'ltInputRole', 'ltInputTopic'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateLowerThirdPreview);
+    });
+
+    function bindLtColorSync(colId, hexId) {
+      const colEl = document.getElementById(colId);
+      const hexEl = document.getElementById(hexId);
+      if (!colEl || !hexEl) return;
+      colEl.addEventListener('input', (e) => {
+        hexEl.value = e.target.value.toUpperCase();
+        updateLowerThirdPreview();
+      });
+      hexEl.addEventListener('change', (e) => {
+        colEl.value = e.target.value;
+        updateLowerThirdPreview();
+      });
+    }
+    bindLtColorSync('ltColBg', 'ltHexBg');
+    bindLtColorSync('ltColAccent', 'ltHexAccent');
+    bindLtColorSync('ltColTextName', 'ltHexTextName');
+    bindLtColorSync('ltColTextRole', 'ltHexTextRole');
+
+    // Theme from Artwork Palette
+    const btnThemeArtwork = document.getElementById('btnLtThemeFromArtwork');
+    if (btnThemeArtwork) {
+      btnThemeArtwork.addEventListener('click', () => {
+        if (currentBrandPalette && currentBrandPalette.length > 0) {
+          const accent = currentBrandPalette[0];
+          const bg = currentBrandPalette.length > 2 ? currentBrandPalette[currentBrandPalette.length - 1] : '#0F172A';
+          document.getElementById('ltColAccent').value = accent;
+          document.getElementById('ltHexAccent').value = accent.toUpperCase();
+          document.getElementById('ltColTextRole').value = accent;
+          document.getElementById('ltHexTextRole').value = accent.toUpperCase();
+          document.getElementById('ltColBg').value = bg;
+          document.getElementById('ltHexBg').value = bg.toUpperCase();
+          document.getElementById('ltColTextName').value = '#FFFFFF';
+          document.getElementById('ltHexTextName').value = '#FFFFFF';
+          updateLowerThirdPreview();
+          document.getElementById('statusText').innerText = `Themed Lower Third with brand palette (${accent})!`;
+        } else {
+          document.getElementById('statusText').innerText = "Load an image in Tab 1 first to extract brand palette.";
+        }
+      });
+    }
+
+    // Clear Mounted Badge
+    const btnClearBadge = document.getElementById('btnClearLtBadge');
+    if (btnClearBadge) {
+      btnClearBadge.addEventListener('click', () => {
+        mountedBadgeDataUrl = null;
+        mountedBadgeName = 'Default Icon';
+        const thumb = document.getElementById('ltBadgePreviewThumb');
+        const nameEl = document.getElementById('ltBadgeNameText');
+        if (thumb) thumb.innerHTML = `<i data-lucide="image" class="w-5 h-5 text-amber-400"></i>`;
+        if (nameEl) nameEl.innerText = mountedBadgeName;
+        lucide.createIcons();
+        updateLowerThirdPreview();
+        document.getElementById('statusText').innerText = "Cleared mounted badge from Lower Third.";
+      });
+    }
+
+    // Generate Lower Third HTML snippet for preview and OBS overlay export
+    function getLowerThirdHtml(isOBS = false) {
+      const name = document.getElementById('ltInputName')?.value || 'KAI MIKO';
+      const role = document.getElementById('ltInputRole')?.value || 'FOUNDER & LEAD SLICER';
+      const topic = document.getElementById('ltInputTopic')?.value || '@mikostudio • #TooFunny';
+      const bg = document.getElementById('ltHexBg')?.value || '#0F172A';
+      const accent = document.getElementById('ltHexAccent')?.value || '#F59E0B';
+      const textName = document.getElementById('ltHexTextName')?.value || '#FFFFFF';
+      const textRole = document.getElementById('ltHexTextRole')?.value || '#F59E0B';
+
+      const badgeHtml = mountedBadgeDataUrl
+        ? `<img src="${mountedBadgeDataUrl}" class="w-full h-full object-contain" alt="Badge" style="max-width: 100%; max-height: 100%; display: block; object-fit: contain;">`
+        : `<div class="w-full h-full flex items-center justify-center font-black text-sm" style="color: ${accent};">MIKO</div>`;
+
+      if (currentLtPreset === 'compact-pill') {
+        return `
+          <div class="flex items-center gap-4 px-6 py-4 rounded-3xl shadow-2xl backdrop-blur-md border"
+               style="background-color: ${bg}EE; border-color: ${accent}99; box-shadow: 0 20px 45px rgba(0,0,0,0.7), 0 0 25px ${accent}33; max-width: 840px;">
+            <div class="w-16 h-16 rounded-2xl p-2 shrink-0 flex items-center justify-center border shadow-inner"
+                 style="background-color: ${bg}; border-color: ${accent};">
+              ${badgeHtml}
+            </div>
+            <div class="flex flex-col pr-4 min-w-0">
+              <div class="text-[12px] font-extrabold uppercase tracking-widest flex items-center gap-1.5" style="color: ${textRole};">
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: ${accent};"></span>
+                <span class="truncate">${escapeHtml(role)}</span>
+              </div>
+              <div class="text-3xl font-black tracking-tight truncate leading-tight mt-0.5" style="color: ${textName}; font-family: 'Segoe UI', system-ui, sans-serif;">
+                ${escapeHtml(name)}
+              </div>
+              ${topic ? `<div class="text-[11px] font-medium text-slate-400 mt-0.5 truncate">${escapeHtml(topic)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      } else if (currentLtPreset === 'extruded-split') {
+        return `
+          <div class="flex flex-col filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]" style="max-width: 880px;">
+            <div class="flex items-center self-start">
+              <div class="px-5 py-1.5 font-black text-xs uppercase tracking-wider rounded-t-lg flex items-center gap-2 transform -skew-x-12 ml-4 border-t-2 border-l-2 border-r-2"
+                   style="background-color: ${accent}; color: ${bg}; border-color: ${accent}; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                <span class="transform skew-x-12">${escapeHtml(role)}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 px-6 py-4 rounded-2xl rounded-tl-none border-2 transform -skew-x-12"
+                 style="background-color: ${bg}; border-color: ${accent}; box-shadow: 0 10px 30px rgba(0,0,0,0.7), inset 0 0 20px rgba(0,0,0,0.5);">
+              <div class="transform skew-x-12 flex items-center gap-4">
+                <div class="w-16 h-16 rounded-xl p-1.5 shrink-0 flex items-center justify-center border shadow-md"
+                     style="background-color: ${bg}CC; border-color: ${accent}99;">
+                  ${badgeHtml}
+                </div>
+                <div class="flex flex-col">
+                  <div class="text-3xl font-black tracking-tight leading-none uppercase" style="color: ${textName}; font-family: Impact, 'Segoe UI', sans-serif; text-shadow: 2px 2px 0px rgba(0,0,0,0.8);">
+                    ${escapeHtml(name)}
+                  </div>
+                  ${topic ? `<div class="text-xs font-bold tracking-wide mt-1" style="color: ${textRole}; opacity: 0.95;">${escapeHtml(topic)}</div>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        // corporate-minimal
+        return `
+          <div class="flex items-center gap-5 px-6 py-4 rounded-xl border border-white/10 backdrop-blur-md shadow-2xl relative overflow-hidden"
+               style="background-color: ${bg}F5; min-width: 480px; max-width: 820px;">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${accent}; box-shadow: 0 0 12px ${accent};"></div>
+            <div class="w-14 h-14 rounded-lg p-2 shrink-0 flex items-center justify-center bg-white/5 border border-white/10">
+              ${badgeHtml}
+            </div>
+            <div class="flex flex-col pl-1 min-w-0">
+              <div class="text-xs font-semibold uppercase tracking-widest truncate" style="color: ${textRole}; font-family: 'Segoe UI', system-ui, sans-serif;">
+                ${escapeHtml(role)}
+              </div>
+              <div class="text-2xl font-light tracking-wide mt-0.5 truncate" style="color: ${textName}; font-family: 'Segoe UI', system-ui, sans-serif;">
+                ${escapeHtml(name)}
+              </div>
+              ${topic ? `<div class="text-[11px] font-mono text-slate-400 mt-1 truncate">${escapeHtml(topic)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function updateLowerThirdPreview() {
+      const mount = document.getElementById('ltMountContainer');
+      if (!mount) return;
+      mount.innerHTML = getLowerThirdHtml();
+    }
+
+    // 1080p Broadcast PNG Export Engine
+    async function export1080pPNG() {
       const outC = document.createElement('canvas');
-      outC.width = 1920; outC.height = 1080;
-      const oCtx = outC.getContext('2d');
+      outC.width = 1920;
+      outC.height = 1080;
+      const ctx = outC.getContext('2d');
 
-      const bannerX = 140, bannerY = 840, bannerW = 920, bannerH = 120;
-      oCtx.fillStyle = '#0f172a';
-      oCtx.fillRect(bannerX, bannerY, bannerW, bannerH);
-      oCtx.strokeStyle = '#f59e0b';
-      oCtx.lineWidth = 3;
-      oCtx.strokeRect(bannerX, bannerY, bannerW, bannerH);
+      const name = (document.getElementById('ltInputName')?.value || 'PRESENTER NAME').toUpperCase();
+      const role = (document.getElementById('ltInputRole')?.value || 'PRESENTER TITLE').toUpperCase();
+      const topic = document.getElementById('ltInputTopic')?.value || '';
+      const bg = document.getElementById('ltHexBg')?.value || '#0F172A';
+      const accent = document.getElementById('ltHexAccent')?.value || '#F59E0B';
+      const textName = document.getElementById('ltHexTextName')?.value || '#FFFFFF';
+      const textRole = document.getElementById('ltHexTextRole')?.value || '#F59E0B';
 
-      oCtx.fillStyle = '#f59e0b';
-      oCtx.fillRect(bannerX, bannerY - 35, 460, 35);
-      oCtx.fillStyle = '#0f172a';
-      oCtx.font = "900 16px 'Segoe UI', system-ui, sans-serif";
-      oCtx.fillText("SPEAKER ROLE / TITLE", bannerX + 25, bannerY - 12);
+      // Load badge image if mounted
+      let badgeImgEl = null;
+      if (mountedBadgeDataUrl) {
+        badgeImgEl = new Image();
+        badgeImgEl.src = mountedBadgeDataUrl;
+        await new Promise(r => { badgeImgEl.onload = r; badgeImgEl.onerror = r; });
+      }
 
-      oCtx.fillStyle = '#ffffff';
-      oCtx.font = "bold 44px 'Segoe UI', system-ui, sans-serif";
-      oCtx.fillText("SPEAKER NAME HERE", bannerX + 130, bannerY + 75);
+      function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      if (currentLtPreset === 'compact-pill') {
+        const bx = 160, by = 840, bw = 840, bh = 140, br = 40;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 35;
+        ctx.shadowOffsetY = 15;
+        ctx.fillStyle = bg;
+        roundRect(bx, by, bw, bh, br);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 3;
+        roundRect(bx, by, bw, bh, br);
+        ctx.stroke();
+
+        const badgeX = bx + 20, badgeY = by + 20, badgeSize = 100;
+        roundRect(badgeX, badgeY, badgeSize, badgeSize, 22);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+        ctx.strokeStyle = accent + '80';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        if (badgeImgEl && badgeImgEl.naturalWidth) {
+          ctx.drawImage(badgeImgEl, badgeX + 10, badgeY + 10, badgeSize - 20, badgeSize - 20);
+        } else {
+          ctx.fillStyle = accent;
+          ctx.font = 'bold 22px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('MIKO', badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+        }
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = textRole;
+        ctx.font = 'bold 16px system-ui, sans-serif';
+        ctx.fillText(role, bx + 145, by + 48);
+
+        ctx.fillStyle = textName;
+        ctx.font = '900 38px system-ui, sans-serif';
+        ctx.fillText(name, bx + 145, by + 90);
+
+        if (topic) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '500 15px system-ui, sans-serif';
+          ctx.fillText(topic, bx + 145, by + 118);
+        }
+
+      } else if (currentLtPreset === 'extruded-split') {
+        const bx = 160, by = 845, bw = 880, bh = 145;
+        const topW = 460, topH = 42, topY = by - 38;
+
+        // Top tier (Role)
+        ctx.save();
+        ctx.fillStyle = accent;
+        ctx.beginPath();
+        ctx.moveTo(bx + 40, topY);
+        ctx.lineTo(bx + topW, topY);
+        ctx.lineTo(bx + topW - 20, topY + topH);
+        ctx.lineTo(bx + 20, topY + topH);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = bg;
+        ctx.font = '900 20px Impact, system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(role, bx + 55, topY + topH / 2);
+        ctx.restore();
+
+        // Bottom tier (Name & Badge)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 15;
+        ctx.fillStyle = bg;
+        ctx.beginPath();
+        ctx.moveTo(bx + 20, by);
+        ctx.lineTo(bx + bw, by);
+        ctx.lineTo(bx + bw - 25, by + bh);
+        ctx.lineTo(bx, by + bh);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        const badgeX = bx + 35, badgeY = by + 22, badgeSize = 100;
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        roundRect(badgeX, badgeY, badgeSize, badgeSize, 16);
+        ctx.fill();
+        ctx.strokeStyle = accent + '99';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        if (badgeImgEl && badgeImgEl.naturalWidth) {
+          ctx.drawImage(badgeImgEl, badgeX + 10, badgeY + 10, badgeSize - 20, badgeSize - 20);
+        } else {
+          ctx.fillStyle = accent;
+          ctx.font = 'bold 22px Impact, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('MIKO', badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+        }
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = textName;
+        ctx.font = '900 50px Impact, sans-serif';
+        ctx.fillText(name, bx + 160, by + 78);
+
+        if (topic) {
+          ctx.fillStyle = textRole;
+          ctx.font = 'bold 18px system-ui, sans-serif';
+          ctx.fillText(topic, bx + 160, by + 115);
+        }
+
+      } else {
+        // corporate-minimal
+        const bx = 160, by = 855, bw = 820, bh = 130, br = 12;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 12;
+        ctx.fillStyle = bg;
+        roundRect(bx, by, bw, bh, br);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        roundRect(bx, by, bw, bh, br);
+        ctx.stroke();
+
+        // Accent hairline
+        ctx.fillStyle = accent;
+        ctx.fillRect(bx, by, 6, bh);
+
+        const badgeX = bx + 28, badgeY = by + 20, badgeSize = 90;
+        roundRect(badgeX, badgeY, badgeSize, badgeSize, 10);
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (badgeImgEl && badgeImgEl.naturalWidth) {
+          ctx.drawImage(badgeImgEl, badgeX + 10, badgeY + 10, badgeSize - 20, badgeSize - 20);
+        } else {
+          ctx.fillStyle = accent;
+          ctx.font = 'bold 18px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('MIKO', badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+        }
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = textRole;
+        ctx.font = '600 15px system-ui, sans-serif';
+        ctx.fillText(role, bx + 145, by + 46);
+
+        ctx.fillStyle = textName;
+        ctx.font = '300 36px system-ui, sans-serif';
+        ctx.fillText(name, bx + 145, by + 86);
+
+        if (topic) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '400 14px Consolas, monospace';
+          ctx.fillText(topic, bx + 145, by + 112);
+        }
+      }
 
       const a = document.createElement('a');
+      a.download = `MikoStudio_LowerThird_1080p_${currentLtPreset}.png`;
       a.href = outC.toDataURL('image/png');
-      a.download = 'MikoStudio_LowerThird_1080p.png';
       a.click();
+      document.getElementById('statusText').innerText = `Exported 1080p Broadcast PNG (${currentLtPreset})!`;
+    }
+
+    // OBS HTML Overlay Export
+    function exportOBSHtml() {
+      const ltHtml = getLowerThirdHtml(true);
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Miko Studio Lower Third - OBS Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    #stage {
+      position: absolute;
+      left: 140px;
+      bottom: 80px;
+      transform-origin: bottom left;
+    }
+    .animate-enter {
+      animation: ltSlideIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .animate-exit {
+      animation: ltSlideOut 0.5s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+    @keyframes ltSlideIn {
+      0% { opacity: 0; transform: translateX(-140px) scale(0.92); }
+      70% { transform: translateX(8px) scale(1.01); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes ltSlideOut {
+      0% { opacity: 1; transform: translateX(0) scale(1); }
+      100% { opacity: 0; transform: translateX(-160px) scale(0.92); }
+    }
+    #hint {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 11px;
+      font-family: monospace;
+      color: rgba(255, 255, 255, 0.35);
+      background: rgba(0, 0, 0, 0.45);
+      padding: 4px 10px;
+      border-radius: 6px;
+      pointer-events: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="hint">Press [Space] or click to show/hide lower third</div>
+  <div id="stage" class="animate-enter">
+    ${ltHtml}
+  </div>
+  <script>
+    let isVisible = true;
+    const stage = document.getElementById('stage');
+    function toggle() {
+      isVisible = !isVisible;
+      stage.className = isVisible ? 'animate-enter' : 'animate-exit';
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        toggle();
+      }
     });
+    window.addEventListener('click', toggle);
+  <\/script>
+</body>
+</html>`;
+
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.download = `MikoStudio_LowerThird_OBS_${currentLtPreset}.html`;
+      a.href = URL.createObjectURL(blob);
+      a.click();
+      document.getElementById('statusText').innerText = `Exported self-contained animated OBS Lower Third HTML overlay!`;
+    }
+
+    // Wire up Export Buttons
+    ['btnExport1080pPNG', 'btnExport1080pPNGSide'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', export1080pPNG);
+    });
+
+    ['btnExportOBSHtml', 'btnExportOBSHtmlSide'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', exportOBSHtml);
+    });
+
+    // Initialize Lower Third Preview
+    updateLowerThirdPreview();
 
     // ===================================================================
     // 15. Layer Lock helpers
