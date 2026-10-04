@@ -96,9 +96,17 @@
           <button id="btnExtractTextOCR" class="px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1">
             <i data-lucide="type" class="w-3.5 h-3.5 text-indigo-400"></i> Extract Text (OCR)
           </button>
-          <button id="btnCutoutAI" class="px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i> Cut Region (AI)
-          </button>
+          <div class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium" id="cutoutEngineGroup" title="Dual-Engine Cutout: Auto analyzes borders (<18 std) -> Razor Chroma Logo vs AI Photo">
+            <button id="btnCutoutAI" class="px-2.5 py-1 text-slate-300 hover:text-white flex items-center gap-1 transition">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i> Cut Region (AI)
+            </button>
+            <div class="h-3.5 w-px bg-slate-700"></div>
+            <div id="cutoutModePills" class="flex items-center text-[10px]">
+              <button type="button" data-cutout-mode="auto" class="px-2 py-1 text-emerald-400 font-semibold bg-emerald-500/10 transition hover:text-white" title="Auto: Flat borders (<18 std) -> Euclidean Chroma; photos -> AI rembg">Auto</button>
+              <button type="button" data-cutout-mode="logo" class="px-2 py-1 text-slate-400 transition hover:text-white border-l border-[#2c2f3d]" title="Logo: Razor-sharp chroma cut with Euclidean distance & feather">Logo</button>
+              <button type="button" data-cutout-mode="photo" class="px-2 py-1 text-slate-400 transition hover:text-white border-l border-[#2c2f3d]" title="Photo: Deep neural salient object extraction (rembg)">Photo</button>
+            </div>
+          </div>
           <button class="btn-eyedropper px-2.5 py-1 rounded text-slate-300 hover:text-white border border-[#2c2f3d] flex items-center gap-1" title="Eyedropper (I) - sample a colour from the image into the active object's Fill">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg> Eyedropper
           </button>
@@ -116,15 +124,32 @@
           </label>
         </div>
 
-        <div id="toolbarCanvas" class="flex items-center gap-2 hidden">
+        <div id="toolbarCanvas" class="flex flex-wrap gap-y-1.5 items-center gap-2 hidden">
+          <!-- Tool Modes: Select (V) / Lasso (L) / Pan (H) -->
+          <div id="toolModeBar" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium">
+            <button id="btnToolSelect" data-tool="select" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 transition" title="Select (V) - click, Shift+click or drag a marquee box to select">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg> Select
+            </button>
+            <button id="btnToolLasso" data-tool="lasso" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Lasso (L) - draw a freehand loop; objects whose centre falls inside get selected">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2.5"><path d="M7 22a5 5 0 0 1-2-4"/><path d="M3.3 14A6.8 6.8 0 0 1 2 10c0-4.4 4.5-8 10-8s10 3.6 10 8-4.5 8-10 8a12 12 0 0 1-5-1" stroke-dasharray="none"/><path d="M5 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke-dasharray="none"/></svg> Lasso
+            </button>
+            <button id="btnToolEraser" data-tool="eraser" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Eraser (E) - click any stray vector path to erase it (even inside groups)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg> Eraser
+            </button>
+            <button id="btnToolPan" data-tool="pan" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Pan viewport (H) - or hold Space and drag">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> Pan
+            </button>
+          </div>
+          <div class="h-4 w-px bg-slate-700 mx-1"></div>
+
           <!-- Undo / Redo -->
           <button id="btnUndo" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Undo (Ctrl+Z)"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>
           <button id="btnRedo" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Redo (Ctrl+Y)"><i data-lucide="redo-2" class="w-3.5 h-3.5"></i></button>
           <div class="h-4 w-px bg-slate-700 mx-1"></div>
 
           <!-- Group / Ungroup & Group by Color -->
-          <button id="btnUngroup" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium" title="Explode group into selectable paths">Ungroup Paths</button>
-          <button id="btnGroup" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium" title="Group selected elements">Group Selected</button>
+          <button id="btnUngroup" disabled class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium opacity-40 cursor-not-allowed" title="Ungroup (Ctrl+Shift+G) - release a group's children back to independent layers">Ungroup</button>
+          <button id="btnGroup" disabled class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium opacity-40 cursor-not-allowed" title="Group Selected (Ctrl+G) - needs a multi-selection">Group Selected</button>
           <button id="btnGroupByColor" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-amber-300 hover:text-white text-[11px] font-medium flex items-center gap-1" title="Merge paths sharing identical fill colors into compound color family groups">
             <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Group by Color
           </button>
@@ -242,7 +267,7 @@
       <div id="panelCanvasInspector" class="flex flex-col justify-between h-full">
         <div>
           <div class="flex items-center justify-between pb-3 border-b border-[#252733] mb-3">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Property Inspector</h2>
+            <h2 id="inspectorTitle" class="text-xs font-bold uppercase tracking-wider text-slate-300">Property Inspector</h2>
             <span id="layerCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0 Layers</span>
           </div>
 
@@ -257,69 +282,123 @@
 
           <!-- Dynamic Controls -->
           <div class="space-y-3 bg-[#14151a] p-3 rounded-xl border border-[#262834] text-xs">
-            <!-- Brand Swatches -->
-            <div class="pb-2.5 border-b border-slate-800">
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
-                  <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Brand Swatches
-                </label>
-                <button id="btnRefreshPalette" class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1" title="Extract palette from current source crop or image">
-                  <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Refresh
-                </button>
+            <!-- Vector Separation Studio (Shown when a raster image / cutout is selected on Tab 2) -->
+            <div id="panelVectorStudio" class="hidden space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span class="text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="split" class="w-3.5 h-3.5"></i> Vector Studio
+                </span>
+                <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono">Raster Selected</span>
               </div>
-              <div id="swatchListInspector" class="flex flex-wrap gap-1.5 items-center">
-                <span class="text-[10px] text-slate-500 italic">Load an image to extract palette</span>
-              </div>
-            </div>
 
-            <!-- Fill Color -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-slate-400 text-[11px]">Fill Color:</label>
-                <input type="text" id="propFillHex" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
-              </div>
-              <input type="color" id="propFillColor" value="#F59E0B" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
-            </div>
-
-            <!-- Stroke Color & Width -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-slate-400 text-[11px]">Stroke:</label>
-                <input type="color" id="propStrokeColor" value="#000000" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
-              </div>
-              <div class="flex items-center gap-2">
-                <input type="range" id="propStrokeWidth" min="0" max="30" value="0" class="w-full accent-amber-500">
-                <span id="strokeWidthVal" class="font-mono text-[11px] text-slate-400 w-6">0</span>
-              </div>
-            </div>
-
-            <!-- Typography Controls -->
-            <div id="textControls" class="space-y-2 pt-2 border-t border-slate-800">
+              <!-- Layer Count Slider -->
               <div>
-                <label class="text-slate-400 text-[11px]">Font Family:</label>
-                <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
-                  <option value="Impact">Impact (Headline)</option>
-                  <option value="Bebas Neue">Bebas Neue (Condensed)</option>
-                  <option value="Cooper Black">Cooper Black (Retro)</option>
-                  <option value="Montserrat">Montserrat (Geometric Sans)</option>
-                  <option value="Arial">Arial</option>
-                  <option value="Georgia">Georgia (Serif)</option>
-                  <option value="Courier New">Courier New</option>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-300 text-[11px] font-medium">Color Layers:</label>
+                  <span id="valVectorLayers" class="font-mono text-amber-400 font-bold text-xs bg-black/40 px-2 py-0.5 rounded border border-slate-800">6</span>
+                </div>
+                <input type="range" id="sliderVectorLayers" min="2" max="32" value="6" class="w-full accent-amber-500 cursor-pointer">
+                <div class="flex justify-between text-[9px] text-slate-500 font-mono mt-0.5">
+                  <span>2 (Minimal)</span>
+                  <span>16</span>
+                  <span>32 (Detailed)</span>
+                </div>
+              </div>
+
+              <!-- Detail Level Dropdown -->
+              <div>
+                <label class="text-slate-300 text-[11px] font-medium block mb-1">Detail Level:</label>
+                <select id="selVectorDetail" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1.5 rounded text-xs text-white focus:border-amber-400 focus:outline-none">
+                  <option value="balanced" selected>Balanced (Default)</option>
+                  <option value="smooth">Smooth</option>
+                  <option value="sharp">Sharp / Typographic</option>
+                  <option value="ultra">Ultra-Detailed (Art)</option>
                 </select>
               </div>
-              <div>
-                <div class="flex items-center justify-between">
-                  <label class="text-slate-400 text-[11px]">Font Size:</label>
-                  <span id="fontSizeVal" class="font-mono text-[11px] text-slate-400">72</span>
+
+              <!-- Color Accuracy Toggle -->
+              <div class="bg-[#181921] p-2 rounded-lg border border-[#2b2d3b]">
+                <label class="flex items-start gap-2 cursor-pointer text-slate-300 text-[11px] select-none">
+                  <input type="checkbox" id="chkSnapSwatches" checked class="mt-0.5 rounded border-slate-700 text-amber-500 focus:ring-0 bg-[#1c1d24]">
+                  <div>
+                    <span class="font-semibold text-slate-200">Snap to Active Brand Swatches</span>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Forces all pixels to mathematically match active brand palette colors instead of K-Means clustering.</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Action Button -->
+              <button id="btnCanvasVectorize" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-2 px-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition text-xs">
+                <i data-lucide="bezier" class="w-4 h-4"></i> Convert to Vector Layers
+              </button>
+            </div>
+
+            <!-- Standard Vector & Text Property Controls -->
+            <div id="panelStandardProps" class="space-y-3">
+              <!-- Brand Swatches -->
+              <div class="pb-2.5 border-b border-slate-800">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-slate-400 text-[11px] font-semibold flex items-center gap-1">
+                    <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Brand Swatches
+                  </label>
+                  <button id="btnRefreshPalette" class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1" title="Extract palette from current source crop or image">
+                    <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Refresh
+                  </button>
                 </div>
-                <input type="range" id="propFontSize" min="8" max="250" value="72" class="w-full accent-amber-500">
+                <div id="swatchListInspector" class="flex flex-wrap gap-1.5 items-center">
+                  <span class="text-[10px] text-slate-500 italic">Load an image to extract palette</span>
+                </div>
+              </div>
+
+              <!-- Fill Color -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-400 text-[11px]">Fill Color:</label>
+                  <input type="text" id="propFillHex" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
+                </div>
+                <input type="color" id="propFillColor" value="#F59E0B" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+              </div>
+
+              <!-- Stroke Color & Width -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-400 text-[11px]">Stroke:</label>
+                  <input type="color" id="propStrokeColor" value="#000000" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="range" id="propStrokeWidth" min="0" max="30" value="0" class="w-full accent-amber-500">
+                  <span id="strokeWidthVal" class="font-mono text-[11px] text-slate-400 w-6">0</span>
+                </div>
+              </div>
+
+              <!-- Typography Controls -->
+              <div id="textControls" class="space-y-2 pt-2 border-t border-slate-800">
+                <div>
+                  <label class="text-slate-400 text-[11px]">Font Family:</label>
+                  <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
+                    <option value="Impact">Impact (Headline)</option>
+                    <option value="Bebas Neue">Bebas Neue (Condensed)</option>
+                    <option value="Cooper Black">Cooper Black (Retro)</option>
+                    <option value="Montserrat">Montserrat (Geometric Sans)</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Georgia">Georgia (Serif)</option>
+                    <option value="Courier New">Courier New</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-slate-400 text-[11px]">Font Size:</label>
+                    <span id="fontSizeVal" class="font-mono text-[11px] text-slate-400">72</span>
+                  </div>
+                  <input type="range" id="propFontSize" min="8" max="250" value="72" class="w-full accent-amber-500">
+                </div>
               </div>
             </div>
 
             <!-- Layer Ordering -->
             <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1 text-[11px]">
-              <button id="btnBringForward" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Forward</button>
-              <button id="btnSendBackward" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Backward</button>
+              <button id="btnBringForward" title="Bring Forward (Ctrl+])  -  Bring to Front (Ctrl+Shift+])" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Forward</button>
+              <button id="btnSendBackward" title="Send Backward (Ctrl+[)  -  Send to Back (Ctrl+Shift+[)" class="flex-1 bg-[#1e2029] hover:bg-[#282b37] border border-slate-700 py-1 rounded text-slate-300">Backward</button>
               <button id="btnDeleteSelected" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 px-2 py-1 rounded"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             </div>
           </div>
@@ -541,7 +620,7 @@
       if (!active) return;
       if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it first."; return; }
       copyActive();
-      fCanvas.remove(active);
+      deleteActive();
     }
 
     function duplicateActive() {
@@ -549,20 +628,30 @@
       pasteActive();
     }
 
+    // Deletes the whole selection (single object, group, or every member of a
+    // multi-selection) as ONE undo step. Locked layers are left untouched.
     function deleteActive() {
       const active = fCanvas.getActiveObject();
       if (!active) return;
+      const status = document.getElementById('statusText');
+      let victims;
       if (active.type === 'activeSelection') {
-        active.forEachObject((obj) => { if (!obj.locked) fCanvas.remove(obj); });
-        fCanvas.discardActiveObject();
+        victims = active.getObjects().filter(o => !o.locked);
       } else if (active.locked) {
-        document.getElementById('statusText').innerText = "Layer is locked - unlock it before deleting.";
+        status.innerText = "Layer is locked - unlock it before deleting.";
         return;
       } else {
-        fCanvas.remove(active);
+        victims = [active];
       }
-      fCanvas.renderAll();
+      fCanvas.discardActiveObject();          // members return to canvas coordinates first
+      const prev = isStateProcessing;
+      isStateProcessing = true;               // suppress per-object history snapshots
+      victims.forEach(o => fCanvas.remove(o));
+      isStateProcessing = prev;
+      saveCanvasState();
+      fCanvas.requestRenderAll();
       updateLayersUI();
+      if (victims.length > 1) status.innerText = `Deleted ${victims.length} objects`;
     }
 
     document.getElementById('btnDeleteSelected').addEventListener('click', deleteActive);
@@ -573,6 +662,9 @@
       if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) return;
       const activeObj = fCanvas.getActiveObject();
       if (activeObj && activeObj.isEditing) return;
+
+      // Canvas-tab shortcuts: V/L/H tools, Ctrl+A/G/Shift+G, Ctrl+[ ] layer order, Esc-cancel lasso
+      if (handleCanvasShortcut(e)) return;
 
       // Spacebar = temporary pan (hand) tool while the canvas tab is showing
       if (e.code === 'Space' || e.key === ' ') {
@@ -679,7 +771,7 @@
           document.getElementById('propFillHex').value = hex.toUpperCase();
           const active = editableActive();
           if (active) {
-            active.set('fill', hex);
+            setStyleOnActive(active, 'fill', hex);
             fCanvas.renderAll();
             saveCanvasState();
           }
@@ -707,7 +799,7 @@
           document.getElementById('propFillHex').value = hex.toUpperCase();
           const active = editableActive();
           if (active) {
-            active.set('fill', hex);
+            setStyleOnActive(active, 'fill', hex);
             fCanvas.renderAll();
             saveCanvasState();
           }
@@ -1070,40 +1162,75 @@
       if (o && o.type === 'group') setGroupChildChrome(o);
     });
 
-    // Ungroup & Group Buttons
+    // Ungroup & Group (buttons + Ctrl+Shift+G / Ctrl+G)
+    // Both run as ONE undo step and keep the artwork's place in the layer stack.
     function ungroupActive(pointerEvent) {
       const active = fCanvas.getActiveObject();
       if (!active || active.type !== 'group') return false;
       if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it to ungroup."; return false; }
-      active.toActiveSelection();
-      // Release children to top-level canvas objects, then re-apply the tight
-      // bounding-box snap to every isolated path so its 8 handles hug the
-      // individual shape with no inherited group padding.
-      const sel = fCanvas.getActiveObject();
-      if (sel && sel.type === 'activeSelection') {
-        const kids = sel.getObjects().slice();
-        fCanvas.discardActiveObject();
-        kids.forEach(snapObjectTight);
-        fCanvas.setActiveObject(new fabric.ActiveSelection(kids, { canvas: fCanvas }));   // members get chrome off in onSelectionChanged
+      const idx = fCanvas.getObjects().indexOf(active);
+      const prev = isStateProcessing;
+      isStateProcessing = true;                 // suppress one history snapshot per released child
+      let count = 0;
+      try {
+        // toActiveSelection() hands the children back to the canvas with their
+        // world position / scale / rotation baked in once the selection is discarded.
+        active.toActiveSelection();
+        // Release children to top-level canvas objects, then re-apply the tight
+        // bounding-box snap to every isolated path so its 8 handles hug the
+        // individual shape with no inherited group padding.
+        const sel = fCanvas.getActiveObject();
+        if (sel && sel.type === 'activeSelection') {
+          const kids = sel.getObjects().slice();
+          count = kids.length;
+          fCanvas.discardActiveObject();
+          kids.forEach(snapObjectTight);
+          if (idx >= 0) kids.forEach((k, j) => fCanvas.moveTo(k, idx + j));   // keep the group's stack slot
+          fCanvas.setActiveObject(kids.length > 1 ? new fabric.ActiveSelection(kids, { canvas: fCanvas }) : kids[0]);   // chrome handled in onSelectionChanged
+        }
+      } finally {
+        isStateProcessing = prev;
       }
       fCanvas.requestRenderAll();
       saveCanvasState();
       updateLayersUI();
-      document.getElementById('statusText').innerText = "Ungrouped into selectable paths!";
+      document.getElementById('statusText').innerText = `Ungrouped into ${count} selectable layer${count === 1 ? '' : 's'}!`;
       return true;
     }
     document.getElementById('btnUngroup').addEventListener('click', () => ungroupActive());
 
-    document.getElementById('btnGroup').addEventListener('click', () => {
+    function groupSelected() {
       const active = fCanvas.getActiveObject();
-      if (!active || active.type !== 'activeSelection') return;
-      const group = active.toGroup();
-      setGroupChildChrome(group);
-      fCanvas.setActiveObject(group);
+      const status = document.getElementById('statusText');
+      if (!active || active.type !== 'activeSelection') {
+        status.innerText = "Select two or more objects to group (Ctrl+G).";
+        return false;
+      }
+      const members = active.getObjects().slice();
+      const stack = fCanvas.getObjects();
+      const topIdx = Math.max(...members.map(o => stack.indexOf(o)));
+      const prev = isStateProcessing;
+      isStateProcessing = true;
+      let group;
+      try {
+        group = active.toGroup();
+        group.name = `Group (${members.length} items)`;
+        setGroupChildChrome(group);
+        // toGroup() appends to the top of the stack; drop it back where the
+        // topmost member used to live so overlapping artwork keeps its order.
+        fCanvas.moveTo(group, Math.max(0, topIdx - (members.length - 1)));
+        fCanvas.setActiveObject(group);
+      } finally {
+        isStateProcessing = prev;
+      }
+      group.setCoords();
       fCanvas.requestRenderAll();
+      saveCanvasState();
       updateLayersUI();
-      document.getElementById('statusText').innerText = "Grouped selected elements!";
-    });
+      status.innerText = `Grouped ${members.length} items!`;
+      return true;
+    }
+    document.getElementById('btnGroup').addEventListener('click', groupSelected);
 
     // Toolbar "Group by Color" Button:
     // Merges paths sharing identical fill colors into compound color family groups with 1 click
@@ -1330,24 +1457,50 @@
       }
     });
 
-    // 8. AI Neural Cutout Pipeline
-    // /api/ai_segment returns { layers: [{ name, png (data URL), x, y, w, h }] }
-    // where x/y/w/h are relative to the submitted crop.
+    // 8. AI & Chroma Dual-Engine Cutout Pipeline
+    let currentCutoutMode = 'auto';
+    document.querySelectorAll('#cutoutModePills [data-cutout-mode]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentCutoutMode = btn.dataset.cutoutMode;
+        document.querySelectorAll('#cutoutModePills [data-cutout-mode]').forEach(b => {
+          const active = b === btn;
+          b.classList.toggle('text-emerald-400', active);
+          b.classList.toggle('font-semibold', active);
+          b.classList.toggle('bg-emerald-500/10', active);
+          b.classList.toggle('text-slate-400', !active);
+        });
+        document.getElementById('statusText').innerText = `Cutout mode set to: ${currentCutoutMode.toUpperCase()}`;
+      });
+    });
+
     document.getElementById('btnCutoutAI').addEventListener('click', async () => {
       const { b64, bounds } = getCroppedBase64();
       const status = document.getElementById('statusText');
-      status.innerText = "Running local u2net background isolation...";
+      status.innerText = currentCutoutMode === 'photo'
+        ? "Running neural salient object isolation (rembg)..."
+        : (currentCutoutMode === 'logo' ? "Extracting razor-sharp chroma logo..." : "Analyzing image borders & isolating cutout...");
 
       try {
-        const resp = await fetch('/api/ai_segment', {
+        const resp = await fetch('/api/cutout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: b64, mode: 'cutout' })
+          body: JSON.stringify({ image: b64, mode: currentCutoutMode, tolerance: 22.0 })
         });
         const data = await resp.json();
-        const layers = Array.isArray(data.layers) ? data.layers : [];
+        let layers = Array.isArray(data.layers) ? data.layers : [];
+        if (layers.length === 0 && data.image) {
+          layers = [{
+            name: `${data.mode === 'chroma_logo' ? 'Chroma Logo' : 'AI Cutout'} Layer`,
+            png: data.image,
+            x: 0,
+            y: 0,
+            w: bounds.w,
+            h: bounds.h
+          }];
+        }
         if (data.error || layers.length === 0) {
-          status.innerText = data.error ? `AI cutout failed: ${data.error}` : "AI cutout found no foreground subject in this region.";
+          status.innerText = data.error ? `Cutout failed: ${data.error}` : "Cutout found no foreground subject in this region.";
           return;
         }
 
@@ -1367,7 +1520,7 @@
               top: keepCoords ? (bounds.y + l.y) : (baseY + (l.y - uy0)),
               scaleX: 1,
               scaleY: 1,
-              name: l.name || "AI Cutout Layer"
+              name: l.name || (data.mode === 'chroma_logo' ? "Chroma Logo Layer" : "AI Cutout Layer")
             });
             res(img);
           });
@@ -1384,9 +1537,10 @@
 
         switchTab('canvas');
         updateLayersUI();
-        status.innerText = `AI cutout: ${imgs.length} layer${imgs.length > 1 ? 's' : ''} generated at 1:1 scale!`;
+        const modeBadge = data.mode === 'chroma_logo' ? 'Razor Chroma Logo' : 'Neural Salient';
+        status.innerText = `Cutout complete (${modeBadge}): ${imgs.length} layer${imgs.length > 1 ? 's' : ''} placed at 1:1 scale!`;
       } catch (err) {
-        alert("Failed to reach /api/ai_segment.");
+        alert("Failed to reach /api/cutout: " + err.message);
       }
     });
 
@@ -1428,6 +1582,7 @@
         fCanvas.freeDrawingBrush.color = document.getElementById('propStrokeColor').value || '#F59E0B';
       }
       document.getElementById('btnToggleDraw').classList.toggle('bg-amber-500/20', fCanvas.isDrawingMode);
+      if (fCanvas.isDrawingMode && currentTool !== 'select') setTool('select', { keepDrawing: true });
     });
 
     document.getElementById('btnPunchOut').addEventListener('click', () => {
@@ -1471,7 +1626,10 @@
     // 11. Property Inspector Two-Way Sync
     fCanvas.on('selection:created', onSelectionChanged);
     fCanvas.on('selection:updated', onSelectionChanged);
-    fCanvas.on('selection:cleared', highlightActiveLayers);
+    fCanvas.on('selection:cleared', () => {
+      syncInspector();
+      highlightActiveLayers();
+    });
 
     function onSelectionChanged() {
       // Locked layers can't be part of a multi-selection (Illustrator-style):
@@ -1503,6 +1661,21 @@
 
     function syncInspector() {
       const active = fCanvas.getActiveObject();
+      const pVector = document.getElementById('panelVectorStudio');
+      const pStd = document.getElementById('panelStandardProps');
+      const title = document.getElementById('inspectorTitle');
+
+      if (active && active.type === 'image') {
+        if (pVector) pVector.classList.remove('hidden');
+        if (pStd) pStd.classList.add('hidden');
+        if (title) title.innerText = "Vector Separation Studio";
+        return;
+      } else {
+        if (pVector) pVector.classList.add('hidden');
+        if (pStd) pStd.classList.remove('hidden');
+        if (title) title.innerText = "Property Inspector";
+      }
+
       if (!active) return;
       if (active.fill && typeof active.fill === 'string') {
         document.getElementById('propFillColor').value = active.fill;
@@ -1514,12 +1687,135 @@
       document.getElementById('propStrokeWidth').value = active.strokeWidth || 0;
       document.getElementById('strokeWidthVal').innerText = active.strokeWidth || 0;
 
-      if (active.type.includes('text')) {
+      if (active.type && active.type.includes('text')) {
         document.getElementById('propFontSize').value = active.fontSize || 72;
         document.getElementById('fontSizeVal').innerText = active.fontSize || 72;
         document.getElementById('propFontFamily').value = active.fontFamily || 'Impact';
       }
     }
+
+    // Vector Studio slider live numeric display
+    const sliderVec = document.getElementById('sliderVectorLayers');
+    const valVec = document.getElementById('valVectorLayers');
+    if (sliderVec && valVec) {
+      sliderVec.addEventListener('input', () => {
+        valVec.innerText = sliderVec.value;
+      });
+    }
+
+    // Canvas-Side Vector Studio Action Button
+    document.getElementById('btnCanvasVectorize')?.addEventListener('click', async () => {
+      const activeObj = fCanvas.getActiveObject();
+      const status = document.getElementById('statusText');
+      if (!activeObj || activeObj.type !== 'image') {
+        status.innerText = "Select a raster image on the canvas to vectorize.";
+        return;
+      }
+
+      const b64 = activeObj.toDataURL();
+      const k_colors = parseInt(document.getElementById('sliderVectorLayers').value, 10) || 6;
+      const detail = document.getElementById('selVectorDetail').value || 'balanced';
+      const snapToSwatches = document.getElementById('chkSnapSwatches').checked;
+
+      let snap_palette = [];
+      if (snapToSwatches) {
+        if (Array.isArray(currentBrandPalette) && currentBrandPalette.length > 0) {
+          snap_palette = currentBrandPalette.slice();
+        } else {
+          const swatchBtns = document.querySelectorAll('#swatchListInspector button, #swatchListTab1 button');
+          const seen = new Set();
+          swatchBtns.forEach(btn => {
+            const hex = btn.dataset.hex || btn.title || '';
+            if (hex.startsWith('#') && !seen.has(hex.toUpperCase())) {
+              seen.add(hex.toUpperCase());
+              snap_palette.push(hex);
+            }
+          });
+        }
+      }
+
+      status.innerText = snap_palette.length > 0
+        ? `Vectorizing with ${snap_palette.length} snapped brand colors (${detail})...`
+        : `Vectorizing into ${k_colors} color layers (${detail})...`;
+
+      const btn = document.getElementById('btnCanvasVectorize');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      try {
+        const resp = await fetch('/api/vectorize_advanced', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: b64,
+            k_colors: k_colors,
+            detail: detail,
+            snap_palette: snap_palette
+          })
+        });
+        const data = await resp.json();
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+
+        if (!data.success || !data.svg) {
+          status.innerText = `Vectorization failed: ${data.error || 'No SVG generated'}`;
+          return;
+        }
+
+        fabric.loadSVGFromString(data.svg, (objects, options) => {
+          if (!objects || objects.length === 0) {
+            status.innerText = "Vectorization returned no vector paths.";
+            return;
+          }
+
+          const group = fabric.util.groupSVGElements(objects, options);
+
+          const origLeft = activeObj.left;
+          const origTop = activeObj.top;
+          const origScaleX = activeObj.scaleX || 1;
+          const origScaleY = activeObj.scaleY || 1;
+          const origAngle = activeObj.angle || 0;
+          const origOriginX = activeObj.originX || 'left';
+          const origOriginY = activeObj.originY || 'top';
+
+          const scaleRatioX = (activeObj.width / (group.width || 1)) * origScaleX;
+          const scaleRatioY = (activeObj.height / (group.height || 1)) * origScaleY;
+
+          group.set({
+            left: origLeft,
+            top: origTop,
+            scaleX: scaleRatioX,
+            scaleY: scaleRatioY,
+            angle: origAngle,
+            originX: origOriginX,
+            originY: origOriginY,
+            name: `${activeObj.name || 'Artwork'} (Vectorized, ${objects.length} paths)`
+          });
+
+          group.subTargetCheck = true;
+          setGroupChildChrome(group);
+
+          const stackIdx = fCanvas.getObjects().indexOf(activeObj);
+          fCanvas.remove(activeObj);
+          if (stackIdx >= 0) {
+            fCanvas.insertAt(group, stackIdx);
+          } else {
+            fCanvas.add(group);
+          }
+
+          group.setCoords();
+          fCanvas.setActiveObject(group);
+          fCanvas.requestRenderAll();
+          saveCanvasState();
+          updateLayersUI();
+          status.innerText = `Vectorized into ${objects.length} paths (${snap_palette.length ? 'Brand Snapped' : k_colors + ' layers'})!`;
+        });
+      } catch (err) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+        alert("Failed to reach /api/vectorize_advanced: " + err.message);
+      }
+    });
 
     // Returns the active object only if it exists and is not locked.
     function editableActive() {
@@ -1536,27 +1832,27 @@
       const val = e.target.value;
       document.getElementById('propFillHex').value = val.toUpperCase();
       const active = editableActive();
-      if (active) { active.set('fill', val); fCanvas.renderAll(); }
+      if (active) { setStyleOnActive(active, 'fill', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propFillHex').addEventListener('change', (e) => {
       const val = e.target.value;
       document.getElementById('propFillColor').value = val;
       const active = editableActive();
-      if (active) { active.set('fill', val); fCanvas.renderAll(); }
+      if (active) { setStyleOnActive(active, 'fill', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propStrokeColor').addEventListener('input', (e) => {
       const val = e.target.value;
       const active = editableActive();
-      if (active) { active.set('stroke', val); fCanvas.renderAll(); }
+      if (active) { setStyleOnActive(active, 'stroke', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propStrokeWidth').addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
       document.getElementById('strokeWidthVal').innerText = val;
       const active = editableActive();
-      if (active) { active.set('strokeWidth', val); fCanvas.renderAll(); }
+      if (active) { setStyleOnActive(active, 'strokeWidth', val); fCanvas.renderAll(); }
     });
 
     document.getElementById('propFontSize').addEventListener('input', (e) => {
@@ -1572,15 +1868,9 @@
       if (active && active.type.includes('text')) { active.set('fontFamily', val); fCanvas.renderAll(); }
     });
 
-    // Z-Ordering
-    document.getElementById('btnBringForward').addEventListener('click', () => {
-      const active = fCanvas.getActiveObject();
-      if (active) { fCanvas.bringForward(active); updateLayersUI(); }
-    });
-    document.getElementById('btnSendBackward').addEventListener('click', () => {
-      const active = fCanvas.getActiveObject();
-      if (active) { fCanvas.sendBackwards(active); updateLayersUI(); }
-    });
+    // Z-Ordering (buttons + Ctrl+] / Ctrl+[ / Ctrl+Shift+] / Ctrl+Shift+[)
+    document.getElementById('btnBringForward').addEventListener('click', () => orderActive('forward'));
+    document.getElementById('btnSendBackward').addEventListener('click', () => orderActive('backward'));
 
     // 12. Layers List UI (visibility / lock / inline rename)
     const ICON_ATTRS = 'width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
@@ -1610,7 +1900,7 @@
 
         const row = document.createElement('div');
         row._obj = obj;
-        row.className = "layer-row flex items-center justify-between p-2 rounded-lg bg-[#1c1d24] border border-[#2b2d39] text-xs hover:border-slate-600 transition cursor-pointer" + (hidden ? " opacity-40" : "");
+        row.className = "layer-row flex items-center justify-between p-2 rounded-lg bg-[#1c1d24] border border-[#2b2d39] text-xs hover:border-slate-600 transition cursor-pointer select-none" + (hidden ? " opacity-40" : "");
         row.innerHTML = `
           <div class="flex items-center gap-1.5 min-w-0 flex-1">
             <button data-act="vis" class="shrink-0 ${hidden ? 'text-slate-500' : 'text-slate-300 hover:text-white'}" title="${hidden ? 'Show layer' : 'Hide layer'}">${hidden ? SVG_ICONS.eyeOff : SVG_ICONS.eye}</button>
@@ -1648,9 +1938,7 @@
         row.onclick = (e) => {
           if (e.target.closest('button') || e.target.closest('input')) return;
           if (obj.visible === false) return;
-          fCanvas.setActiveObject(obj);
-          fCanvas.renderAll();
-          highlightActiveLayers();
+          selectLayerRow(obj, e);
         };
         container.appendChild(row);
       });
@@ -1663,8 +1951,11 @@
       document.querySelectorAll('#layersList .layer-row').forEach(row => {
         const on = set.has(row._obj);
         row.classList.toggle('border-amber-500/60', on);
+        row.classList.toggle('bg-amber-500/10', on);
         row.classList.toggle('border-[#2b2d39]', !on);
+        row.classList.toggle('bg-[#1c1d24]', !on);
       });
+      updateGroupButtons();
     }
 
     function startLayerRename(span, obj) {
@@ -2376,6 +2667,7 @@
     // ===================================================================
     const ZOOM_MIN = 0.2, ZOOM_MAX = 10;
     let spacePanActive = false, isPanning = false, panButton = 0, lastPanX = 0, lastPanY = 0, panModeSaved = null;
+    let currentTool = 'select';   // 'select' (V) | 'lasso' (L) | 'pan' (H) - see section 19
 
     function isCanvasTabVisible() {
       return !document.getElementById('fabricWrapper').classList.contains('hidden');
@@ -2411,7 +2703,7 @@
 
     // Pan-mode cursor handling (shared by Space-hold and active drag)
     function refreshPanMode() {
-      const on = spacePanActive || isPanning;
+      const on = spacePanActive || isPanning || currentTool === 'pan';
       const upper = fCanvas.upperCanvasEl;
       if (on) {
         if (!panModeSaved) {
@@ -2446,7 +2738,7 @@
     // Capture on the canvas wrapper so we win over fabric's own mousedown handling.
     fCanvas.wrapperEl.addEventListener('mousedown', (e) => {
       const middle = e.button === 1;
-      const spaceDrag = spacePanActive && e.button === 0;
+      const spaceDrag = (spacePanActive || currentTool === 'pan') && e.button === 0;
       if (!middle && !spaceDrag) return;
       e.preventDefault();              // also suppresses middle-click autoscroll
       e.stopImmediatePropagation();
@@ -2620,7 +2912,7 @@
     function applySampledColor(hex) {
       const active = editableActive();
       if (!active) return;
-      active.set('fill', hex);
+      setStyleOnActive(active, 'fill', hex);
       document.getElementById('propFillColor').value = hex.toLowerCase();
       document.getElementById('propFillHex').value = hex.toUpperCase();
       fCanvas.requestRenderAll();
@@ -2649,6 +2941,405 @@
     }
 
     document.querySelectorAll('.btn-eyedropper').forEach(b => b.addEventListener('click', activateEyedropper));
+
+    // ===================================================================
+    // 19. Selection Tools: Select / Lasso / Pan, grouping state, shortcuts
+    // ===================================================================
+    //   V = Select (marquee + Shift+click)   L = Lasso   H / Space+drag = Pan
+    //   Ctrl+A select all      Ctrl+G group      Ctrl+Shift+G ungroup
+    //   Ctrl+] forward   Ctrl+[ backward   Ctrl+Shift+] front   Ctrl+Shift+[ back
+    const LASSO_COLOR = '#06b6d4';
+    const TOOL_BUTTONS = { select: 'btnToolSelect', lasso: 'btnToolLasso', eraser: 'btnToolEraser', pan: 'btnToolPan' };
+    const TOOL_LABELS = {
+      select: 'Select (V): click, Shift+click to toggle, or drag a marquee box.',
+      lasso: 'Lasso (L): drag a freehand loop around objects, release to select them (Esc cancels).',
+      eraser: 'Eraser (E): click any stray vector path to erase it (even inside groups).',
+      pan: 'Pan (H): drag to move the viewport.'
+    };
+
+    // --- Selection helpers ---------------------------------------------
+    function getSelectionList() {
+      const a = fCanvas.getActiveObject();
+      if (!a) return [];
+      return a.type === 'activeSelection' ? a.getObjects().slice() : [a];
+    }
+
+    // Replace the current selection with `objs`, ordered by canvas stacking so
+    // grouping / z-order operations keep the artwork's layer order.
+    function setSelectionTo(objs) {
+      const stack = fCanvas.getObjects();
+      objs = Array.from(new Set(objs)).filter(o => stack.includes(o));
+      fCanvas.discardActiveObject();            // returns members to canvas coordinates first
+      if (objs.length === 1) {
+        fCanvas.setActiveObject(objs[0]);
+      } else if (objs.length > 1) {
+        objs.sort((a, b) => stack.indexOf(a) - stack.indexOf(b));
+        fCanvas.setActiveObject(new fabric.ActiveSelection(objs, { canvas: fCanvas }));
+      }
+      fCanvas.requestRenderAll();
+      highlightActiveLayers();
+    }
+
+    // Apply a style property to every member of a multi-selection (or the single active object / group).
+    function setStyleOnActive(active, prop, val) {
+      if (!active) return;
+      if (active.type === 'activeSelection') {
+        active.getObjects().forEach(o => { if (!o.locked) { o.set(prop, val); o.dirty = true; } });
+        active.dirty = true;
+      } else if (active.type === 'group') {
+        active.getObjects().forEach(o => { if (!o.locked) { o.set(prop, val); o.dirty = true; } });
+        active.set(prop, val);
+        active.dirty = true;
+      } else {
+        active.set(prop, val);
+      }
+    }
+
+    function selectAllObjects() {
+      const objs = fCanvas.getObjects().filter(o => o.visible !== false && !o.locked && o.selectable !== false);
+      setSelectionTo(objs);
+      document.getElementById('statusText').innerText = objs.length ? `Selected all ${objs.length} object${objs.length === 1 ? '' : 's'}` : 'Nothing to select.';
+    }
+
+    // Group Selected is only meaningful on a multi-selection; Ungroup only on a fabric.Group.
+    function updateGroupButtons() {
+      const a = fCanvas.getActiveObject();
+      const setEnabled = (id, enabled) => {
+        const b = document.getElementById(id);
+        if (!b) return;
+        b.disabled = !enabled;
+        b.classList.toggle('opacity-40', !enabled);
+        b.classList.toggle('cursor-not-allowed', !enabled);
+      };
+      setEnabled('btnGroup', !!a && a.type === 'activeSelection');
+      setEnabled('btnUngroup', !!a && a.type === 'group' && !a.locked);
+    }
+
+    // --- Layer ordering (works on single objects and multi-selections) ---
+    function orderActive(kind) {
+      const a = fCanvas.getActiveObject();
+      if (!a) { document.getElementById('statusText').innerText = "Select a layer first."; return; }
+      if (kind === 'forward') fCanvas.bringForward(a);
+      else if (kind === 'backward') fCanvas.sendBackwards(a);
+      else if (kind === 'front') fCanvas.bringToFront(a);
+      else if (kind === 'back') fCanvas.sendToBack(a);
+      else return;
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+      updateLayersUI();
+      document.getElementById('statusText').innerText =
+        { forward: 'Brought forward', backward: 'Sent backward', front: 'Brought to front', back: 'Sent to back' }[kind];
+    }
+
+    // --- Sidebar layer rows: Ctrl/Cmd+Click toggles, Shift+Click selects a range ---
+    let layerAnchor = null;
+    function selectLayerRow(obj, e) {
+      const stack = fCanvas.getObjects();
+      const current = getSelectionList();
+      let next;
+      if (e.shiftKey && layerAnchor && layerAnchor.visible !== false && stack.includes(layerAnchor)) {
+        const a = stack.indexOf(layerAnchor), b = stack.indexOf(obj);
+        const range = stack.slice(Math.min(a, b), Math.max(a, b) + 1).filter(o => o.visible !== false && !o.locked);
+        next = (e.ctrlKey || e.metaKey) ? current.concat(range) : range;
+      } else if (e.ctrlKey || e.metaKey) {
+        next = current.includes(obj) ? current.filter(o => o !== obj) : current.concat(obj);
+        layerAnchor = obj;
+      } else {
+        next = [obj];
+        layerAnchor = obj;
+      }
+      if (next.length === 1 && current.length === 1 && next[0] === current[0]) { highlightActiveLayers(); return; }
+      setSelectionTo(next);
+      document.getElementById('statusText').innerText = next.length > 1 ? `${next.length} layers selected` : 'Ready';
+    }
+
+    // --- Marquee (box) selection: on by default in Select mode -----------
+    fCanvas.selection = true;                       // drag on empty canvas -> fabric.ActiveSelection
+    fCanvas.selectionKey = 'shiftKey';              // Shift+Click toggles members in / out
+    fCanvas.selectionFullyContained = false;        // intersected OR enclosed objects are captured
+    fCanvas.selectionColor = 'rgba(6, 182, 212, 0.12)';
+    fCanvas.selectionBorderColor = LASSO_COLOR;
+    fCanvas.selectionLineWidth = 1;
+    fCanvas.selectionDashArray = [4, 3];
+
+    // --- Tool modes ------------------------------------------------------
+    // Cursor/target-finding state is routed through panModeSaved while a temporary
+    // Space-pan is active so releasing Space restores the *current* tool's state.
+    function applyToolCursors(d, h, m, skip) {
+      if (panModeSaved) { panModeSaved.d = d; panModeSaved.h = h; panModeSaved.m = m; panModeSaved.skip = skip; return; }
+      fCanvas.defaultCursor = d;
+      fCanvas.hoverCursor = h;
+      fCanvas.moveCursor = m;
+      fCanvas.skipTargetFind = skip;
+      fCanvas.upperCanvasEl.style.cursor = d === 'default' ? '' : d;
+    }
+
+    function updateToolButtons() {
+      Object.keys(TOOL_BUTTONS).forEach(t => {
+        const b = document.getElementById(TOOL_BUTTONS[t]);
+        if (!b) return;
+        const on = t === currentTool;
+        b.classList.toggle('bg-amber-500/25', on);
+        b.classList.toggle('text-amber-300', on);
+        b.classList.toggle('font-semibold', on);
+        b.classList.toggle('text-slate-400', !on);
+      });
+    }
+
+    function setTool(tool, opts) {
+      opts = opts || {};
+      if (!TOOL_BUTTONS[tool]) return;
+      if (lasso.active) cancelLasso(true);
+      currentTool = tool;
+      refreshPanMode();                             // enter / leave the persistent Pan tool
+
+      // Pointer tools and the freehand brush are mutually exclusive
+      if (!opts.keepDrawing && fCanvas.isDrawingMode) {
+        fCanvas.isDrawingMode = false;
+        document.getElementById('btnToggleDraw').classList.remove('bg-amber-500/20');
+      }
+
+      if (tool === 'lasso') {
+        fCanvas.selection = false;                  // no marquee while lassoing
+        applyToolCursors('crosshair', 'crosshair', 'crosshair', true);   // clicks never grab objects
+      } else if (tool === 'eraser') {
+        fCanvas.selection = false;                  // no marquee while erasing
+        fCanvas.discardActiveObject();
+        fCanvas.requestRenderAll();
+        applyToolCursors('crosshair', 'crosshair', 'crosshair', false);
+      } else if (tool === 'pan') {
+        fCanvas.selection = false;                  // cursor + drag handled by the Pan machinery
+      } else {
+        fCanvas.selection = true;
+        applyToolCursors('default', 'move', 'move', false);
+      }
+      updateToolButtons();
+      if (!opts.silent) document.getElementById('statusText').innerText = TOOL_LABELS[tool];
+    }
+
+    // --- Magic Canvas Cleanup Eraser (E) --------------------------------
+    fCanvas.on('before:transform', (opt) => {
+      if (currentTool === 'eraser') {
+        opt.e?.preventDefault?.();
+        fCanvas.discardActiveObject();
+      }
+    });
+
+    fCanvas.on('mouse:down', (opt) => {
+      if (currentTool !== 'eraser' || (opt.e && opt.e.button !== 0) || spacePanActive) return;
+      if (opt.e) {
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      }
+
+      let subTarget = null;
+      let parentGroup = null;
+
+      // 1. Check if Fabric subTargetCheck identified an inner group child
+      if (opt.subTargets && opt.subTargets.length > 0) {
+        subTarget = opt.subTargets[opt.subTargets.length - 1];
+        parentGroup = opt.target;
+      } else if (opt.target && opt.target.type === 'group') {
+        parentGroup = opt.target;
+        const ptr = fCanvas.getPointer(opt.e);
+        const inv = fabric.util.invertTransform(parentGroup.calcTransformMatrix());
+        const localPt = fabric.util.transformPoint(new fabric.Point(ptr.x, ptr.y), inv);
+        const kids = parentGroup.getObjects().slice().reverse();
+        for (const k of kids) {
+          if (k.containsPoint && k.containsPoint(localPt)) {
+            subTarget = k;
+            break;
+          }
+        }
+      } else if (opt.target) {
+        subTarget = opt.target;
+        parentGroup = null;
+      } else {
+        const prevPP = fCanvas.perPixelTargetFind;
+        fCanvas.perPixelTargetFind = true;
+        const found = fCanvas.findTarget(opt.e, true);
+        fCanvas.perPixelTargetFind = prevPP;
+        if (found) {
+          if (found.type === 'group') {
+            parentGroup = found;
+            const ptr = fCanvas.getPointer(opt.e);
+            const inv = fabric.util.invertTransform(parentGroup.calcTransformMatrix());
+            const localPt = fabric.util.transformPoint(new fabric.Point(ptr.x, ptr.y), inv);
+            const kids = parentGroup.getObjects().slice().reverse();
+            for (const k of kids) {
+              if (k.containsPoint && k.containsPoint(localPt)) {
+                subTarget = k;
+                break;
+              }
+            }
+          } else {
+            subTarget = found;
+          }
+        }
+      }
+
+      if (subTarget) {
+        if (parentGroup) {
+          parentGroup.removeWithUpdate(subTarget);
+          parentGroup.setCoords();
+          if (parentGroup.size() === 0) {
+            fCanvas.remove(parentGroup);
+          }
+        } else {
+          fCanvas.remove(subTarget);
+        }
+        fCanvas.discardActiveObject();
+        fCanvas.requestRenderAll();
+        saveCanvasState();
+        updateLayersUI();
+        document.getElementById('statusText').innerText = `Erased "${subTarget.name || subTarget.type || 'vector path'}"!`;
+      }
+    });
+
+    document.querySelectorAll('#toolModeBar [data-tool]').forEach(b =>
+      b.addEventListener('click', () => setTool(b.dataset.tool)));
+
+    // --- Lasso (freehand circling) selection ----------------------------
+    const lasso = { active: false, pts: [], svg: null, poly: null };
+
+    function ensureLassoSvg() {
+      if (lasso.svg) return;
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      Object.assign(svg.style, { position: 'absolute', left: '0', top: '0', width: '100%', height: '100%',
+                                 pointerEvents: 'none', zIndex: '20', display: 'none' });
+      const poly = document.createElementNS(NS, 'polygon');
+      poly.setAttribute('fill', 'rgba(6, 182, 212, 0.10)');
+      poly.setAttribute('stroke', LASSO_COLOR);
+      poly.setAttribute('stroke-width', '1.5');
+      poly.setAttribute('stroke-dasharray', '6 4');
+      poly.setAttribute('stroke-linejoin', 'round');
+      poly.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(poly);
+      fCanvas.wrapperEl.appendChild(svg);
+      lasso.svg = svg;
+      lasso.poly = poly;
+    }
+
+    // Pointer position in canvas pixels (CSS-scale independent, before viewport pan/zoom)
+    function lassoPoint(e) {
+      const r = fCanvas.upperCanvasEl.getBoundingClientRect();
+      return {
+        x: (e.clientX - r.left) * (fCanvas.getWidth() / (r.width || 1)),
+        y: (e.clientY - r.top) * (fCanvas.getHeight() / (r.height || 1))
+      };
+    }
+
+    function renderLasso() {
+      lasso.poly.setAttribute('points', lasso.pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
+    }
+
+    function hideLasso() {
+      lasso.active = false;
+      if (lasso.svg) { lasso.svg.style.display = 'none'; lasso.poly.setAttribute('points', ''); }
+    }
+
+    function cancelLasso(silent) {
+      if (!lasso.active) return;
+      hideLasso();
+      if (!silent) document.getElementById('statusText').innerText = 'Lasso cancelled.';
+    }
+
+    // Ray-casting point-in-polygon
+    function pointInPolygon(x, y, poly) {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+      }
+      return inside;
+    }
+
+    function finishLasso() {
+      const pts = lasso.pts.slice();
+      hideLasso();                                   // closes the loop visually
+      setTool('select', { silent: true });           // always hand control back to the pointer
+      const status = document.getElementById('statusText');
+      if (pts.length < 3) { setSelectionTo([]); status.innerText = 'Lasso too small - draw a loop around the objects.'; return; }
+
+      // canvas pixels -> scene coordinates (undo viewport pan / zoom)
+      const inv = fabric.util.invertTransform(fCanvas.viewportTransform);
+      const poly = pts.map(p => fabric.util.transformPoint(new fabric.Point(p.x, p.y), inv));
+
+      const hits = fCanvas.getObjects().filter(o => {
+        if (o.visible === false || o.locked || o.selectable === false) return false;
+        const r = o.getBoundingRect(true, true);     // bounding box in scene space
+        return pointInPolygon(r.left + r.width / 2, r.top + r.height / 2, poly);
+      });
+      setSelectionTo(hits);
+      status.innerText = hits.length
+        ? `Lasso selected ${hits.length} object${hits.length === 1 ? '' : 's'} - Ctrl+G to group.`
+        : 'Lasso found no objects (an object is picked when its centre is inside the loop).';
+    }
+
+    fCanvas.upperCanvasEl.addEventListener('mousedown', (e) => {
+      if (currentTool !== 'lasso' || e.button !== 0 || spacePanActive) return;
+      e.preventDefault();
+      ensureLassoSvg();
+      lasso.svg.setAttribute('viewBox', `0 0 ${fCanvas.getWidth()} ${fCanvas.getHeight()}`);
+      lasso.pts = [lassoPoint(e)];
+      lasso.active = true;
+      lasso.svg.style.display = 'block';
+      renderLasso();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!lasso.active) return;
+      const p = lassoPoint(e), last = lasso.pts[lasso.pts.length - 1];
+      if (Math.hypot(p.x - last.x, p.y - last.y) < 2) return;     // thin out the polyline
+      lasso.pts.push(p);
+      renderLasso();
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (lasso.active && e.button === 0) finishLasso();
+    });
+    window.addEventListener('blur', () => cancelLasso());
+
+    // --- Keyboard dispatcher (called from the global keydown listener) ---
+    function handleCanvasShortcut(e) {
+      if (!isCanvasTabVisible()) return false;
+      const mod = e.ctrlKey || e.metaKey;
+      const key = (e.key || '').toLowerCase();
+
+      if (mod && !e.altKey) {
+        if (key === 'a') { e.preventDefault(); selectAllObjects(); return true; }
+        if (key === 'g') {
+          e.preventDefault();
+          if (e.shiftKey) { if (!ungroupActive()) document.getElementById('statusText').innerText = 'Select a group to ungroup (Ctrl+Shift+G).'; }
+          else groupSelected();
+          return true;
+        }
+        if (e.code === 'BracketRight' || e.code === 'BracketLeft' || e.key === ']' || e.key === '[' || e.key === '}' || e.key === '{') {
+          e.preventDefault();
+          const fwd = e.code === 'BracketRight' || e.key === ']' || e.key === '}';
+          orderActive(e.shiftKey ? (fwd ? 'front' : 'back') : (fwd ? 'forward' : 'backward'));
+          return true;
+        }
+        return false;
+      }
+      if (mod || e.altKey) return false;
+
+      if (key === 'escape') {
+        if (lasso.active) { cancelLasso(); return true; }
+        if (currentTool !== 'select') { setTool('select'); return true; }
+        return false;                                 // fall through: Esc deselects
+      }
+      if (key === 'v') { e.preventDefault(); setTool('select'); return true; }
+      if (key === 'l') { e.preventDefault(); setTool('lasso'); return true; }
+      if (key === 'e') { e.preventDefault(); setTool('eraser'); return true; }
+      if (key === 'h') { e.preventDefault(); setTool('pan'); return true; }
+      return false;
+    }
+
+    setTool('select', { silent: true });
+    updateGroupButtons();
   </script>
 </body>
 </html>

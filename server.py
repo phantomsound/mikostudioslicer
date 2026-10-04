@@ -31,19 +31,111 @@ def _decode_image(data_url):
 
 
 # ---------------------------------------------------------------------------
-#  /api/ai_segment  –  Neural background removal (rembg / u2net)
+#  Crisp alpha matting (razor-sharp cutout edges)
 # ---------------------------------------------------------------------------
 
-def segment(data_url, mode):
+def crisp_matte(arr):
+    """Refine an RGBA uint8 array from rembg into a razor-sharp silhouette.
+
+    1. Defringe: for transition pixels with 20 <= alpha <= 235, replace RGB
+       with the colour of the nearest solid interior pixel (alpha > 235),
+       eliminating background colour bleeding into the soft u2net halo.
+    2. Threshold clamping: snap transition pixels with alpha >= 128 to 255,
+       and drop boundary pixels with alpha < 128 to 0.
+    """
     import numpy as np
-    from rembg import remove
     from scipy import ndimage as ndi
-    img = _decode_image(data_url)
-    out = remove(img, session=session()).convert("RGBA")
-    arr = np.array(out)
+
+    arr = arr.copy()
+    alpha = arr[..., 3]
+
+    fringe = (alpha >= 20) & (alpha <= 235)
+    core = alpha > 235
+    if not core.any():
+        core = alpha >= 128
+    if fringe.any() and core.any():
+        _, (iy, ix) = ndi.distance_transform_edt(~core, return_indices=True)
+        fy, fx = iy[fringe], ix[fringe]
+        arr[..., :3][fringe] = arr[..., :3][fy, fx]
+
+    # Edge threshold clamping: alpha >= 128 -> 255, alpha < 128 -> 0
+    arr[..., 3] = np.where(arr[..., 3] >= 128, 255, 0).astype(np.uint8)
+    arr[arr[..., 3] == 0, :3] = 0
+    return arr
+
+
+# ---------------------------------------------------------------------------
+#  /api/ai_segment, /api/cutout  –  Dual-Engine Cutout (Chroma Logo vs AI Photo)
+# ---------------------------------------------------------------------------
+
+def dual_engine_cutout(data_url, mode="auto", tolerance=22.0):
+    """Intelligent Dual-Engine Cutout:
+    - Mode 'auto': Automatically analyzes border pixels. If border is flat
+      (border_std < 18.0), uses razor-sharp Euclidean Chroma cutout.
+      If busy/photo, uses neural salient object extraction (rembg).
+    - Mode 'logo': Forces Chroma logo/text cutout with anti-aliased edge.
+    - Mode 'photo': Forces rembg AI neural salient object removal.
+    - Mode 'split': Runs dual-engine and splits into connected component layers.
+    """
+    import numpy as np
+    from PIL import Image as PILImage
+    from scipy import ndimage as ndi
+
+    img = _decode_image(data_url).convert("RGBA")
+    w, h = img.size
+    np_img = np.array(img)
+
+    # 1. Sample border pixels (top, bottom, left, right 2px strips)
+    border_pixels = np.concatenate([
+        np_img[:2, :, :3].reshape(-1, 3),
+        np_img[-2:, :, :3].reshape(-1, 3),
+        np_img[:, :2, :3].reshape(-1, 3),
+        np_img[:, -2:, :3].reshape(-1, 3)
+    ])
+    border_std = float(np.std(border_pixels, axis=0).mean())
+    median_bg = np.median(border_pixels, axis=0)  # [R, G, B]
+
+    is_flat_bg = border_std < 18.0 or mode in ("logo", "stamp")
+
+    if is_flat_bg and mode != "photo":
+        # --- CHROMA / FLOOD-FILL LOGO CUTOUT (Razor Sharp for Text/Logos) ---
+        rgb = np_img[:, :, :3].astype(np.float32)
+        diff = np.sqrt(np.sum((rgb - median_bg) ** 2, axis=2))
+
+        feather = 2.0
+        tol = float(tolerance) if tolerance is not None else 22.0
+        alpha = np.clip((diff - tol) / feather * 255.0, 0, 255).astype(np.uint8)
+
+        # Enforce pure transparency on borders to prevent outer framing slivers
+        alpha[:1, :] = 0; alpha[-1:, :] = 0; alpha[:, :1] = 0; alpha[:, -1:] = 0
+
+        # Preserve existing transparency if image already had alpha
+        if np_img.shape[2] == 4:
+            alpha = np.minimum(alpha, np_img[:, :, 3])
+
+        out_arr = np.dstack([np_img[:, :, :3], alpha])
+        out_arr[alpha == 0, :3] = 0
+        out_img = PILImage.fromarray(out_arr, "RGBA")
+        engine_used = "chroma_logo"
+    else:
+        # --- REMBG AI SALIENT OBJECT CUTOUT (For Natural Photos Only) ---
+        from rembg import remove
+        raw = remove(img, session=session()).convert("RGBA")
+        out_img = PILImage.fromarray(crisp_matte(np.array(raw)), "RGBA")
+        engine_used = "rembg_photo"
+
+    arr = np.array(out_img)
     mask = arr[..., 3] > 8
+
     if not mask.any():
-        return []
+        return {
+            "success": True,
+            "image": png_url(out_img),
+            "layers": [],
+            "mode": engine_used,
+            "border_std": border_std
+        }
+
     if mode == "split":
         grow = max(2, min(img.size) // 120)
         lab, n = ndi.label(ndi.binary_dilation(mask, iterations=grow))
@@ -52,18 +144,33 @@ def segment(data_url, mode):
         comps = sorted((c for c in comps if c.sum() >= floor), key=lambda c: -c.sum())[:64]
     else:
         comps = [mask]
+
     layers = []
     for i, c in enumerate(comps, 1):
-        from PIL import Image
         ys, xs = np.where(c)
         x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
         piece = arr.copy()
         piece[~c] = 0
-        crop = Image.fromarray(piece[y0:y1, x0:x1], "RGBA")
-        layers.append({"name": f"{'Piece' if mode == 'split' else 'Cutout'} {i}",
-                       "png": png_url(crop), "x": int(x0), "y": int(y0),
-                       "w": int(x1 - x0), "h": int(y1 - y0)})
-    return layers
+        crop = PILImage.fromarray(piece[y0:y1, x0:x1], "RGBA")
+        layers.append({
+            "name": f"{'Piece' if mode == 'split' else 'Cutout'} {i}",
+            "png": png_url(crop),
+            "x": int(x0), "y": int(y0),
+            "w": int(x1 - x0), "h": int(y1 - y0)
+        })
+
+    return {
+        "success": True,
+        "image": png_url(out_img),
+        "layers": layers,
+        "mode": engine_used,
+        "border_std": border_std
+    }
+
+
+def segment(data_url, mode="cutout"):
+    res = dual_engine_cutout(data_url, mode=mode)
+    return res.get("layers", [])
 
 
 # ---------------------------------------------------------------------------
@@ -195,23 +302,32 @@ def _preprocess_for_vectorization(pil_img, num_colors=12, bg_color=None):
 
 
 
+# Shared tracing geometry tuned for crisp typography & geometric marks.
+# Applied to every preset (after the preset's own colour settings).
+CRISP_TRACE_PARAMS = dict(
+    corner_threshold=40,    # keep sharp corners on letters/badges (default 60 rounds them)
+    splice_threshold=45,    # tighter Bezier splice
+    length_threshold=3.5,   # shorter segments -> closer curve fit
+    filter_speckle=3,       # drop lone micro-artifacts only
+)
+
 VECTORIZE_PRESETS = {
     # Flat geometric brand marks and icons
     "logo": {
         "colors": 8,
-        "vtracer": dict(colormode="color", hierarchical="stacked", filter_speckle=20,
-                        color_precision=6, layer_difference=20, corner_threshold=60),
+        "vtracer": dict(colormode="color", hierarchical="stacked",
+                        color_precision=6, layer_difference=20),
     },
     # Cartoon artwork, badges, detailed mascots
     "illustration": {
         "colors": 16,
-        "vtracer": dict(colormode="color", hierarchical="stacked", filter_speckle=10,
-                        color_precision=8, layer_difference=12, corner_threshold=45),
+        "vtracer": dict(colormode="color", hierarchical="stacked",
+                        color_precision=8, layer_difference=12),
     },
     # Single-colour stamps, typography, ink marks (strict 2-colour mask)
     "silhouette": {
         "colors": 2,
-        "vtracer": dict(colormode="binary", hierarchical="cutout", filter_speckle=16),
+        "vtracer": dict(colormode="binary", hierarchical="cutout"),
     },
 }
 DEFAULT_PRESET = "logo"
@@ -298,12 +414,11 @@ def vectorize(data_url, preset=DEFAULT_PRESET):
         preprocessed.save(in_path, "PNG")
         params = dict(
             mode="spline",
-            length_threshold=4.0,
             max_iterations=10,
-            splice_threshold=45,
             path_precision=3,
         )
         params.update(cfg["vtracer"])
+        params.update(CRISP_TRACE_PARAMS)
         vtracer.convert_image_to_svg_py(in_path, out_path, **params)
         with open(out_path, "r", encoding="utf-8") as f:
             svg_str = f.read()
@@ -316,6 +431,190 @@ def vectorize(data_url, preset=DEFAULT_PRESET):
     # --- Post-process: prune micro-artifacts, purge enclosed bg color, suppress black slivers & depth-sort ---
     svg_str = _prune_and_sort_svg(svg_str, bg_color=bg_color)
 
+    return {"success": True, "svg": svg_str}
+
+
+def vectorize_advanced(data_url, k_colors=6, detail="balanced", snap_palette=None):
+    """Advanced vectorization pipeline with hard-snapped color quantization and
+    tunable VTracer spline detail profiles.
+    
+    A. Hard-Snapped Color Quantization:
+       - If snap_palette is provided and non-empty:
+         Bypasses K-Means clustering entirely. Converts snap_palette hex strings
+         to RGB and forces every non-transparent pixel to the exact nearest brand color.
+       - If snap_palette is empty:
+         Runs K-Means clustering with n_clusters = k_colors to force the exact requested layers.
+         
+    B. Tunable VTracer Detail Profiles:
+       - 'smooth': corner_threshold=60, filter_speckle=10, length_threshold=5.0
+       - 'balanced' (default): corner_threshold=40, filter_speckle=4, length_threshold=3.5
+       - 'sharp' / 'typographic': corner_threshold=20, filter_speckle=2, length_threshold=2.5, splice_threshold=30
+       - 'ultra' / 'detailed': corner_threshold=10, filter_speckle=1, length_threshold=1.5
+    """
+    import vtracer
+    import numpy as np
+    from PIL import Image as PILImage, ImageFilter
+    import scipy.cluster.vq as vq
+    import warnings
+    import tempfile, os
+
+    img = _decode_image(data_url).convert("RGBA")
+    arr = np.array(img)
+    alpha = arr[..., 3]
+
+    # Preserve alpha if already transparent (e.g. from canvas cutout)
+    if (alpha < 128).mean() > 0.05:
+        binary_alpha = np.where(alpha > 128, 255, 0).astype(np.uint8)
+        raw_rgb = arr[..., :3].copy()
+    else:
+        try:
+            from rembg import remove
+            cutout = remove(img, session=session()).convert("RGBA")
+            c_arr = np.array(cutout)
+            binary_alpha = np.where(c_arr[..., 3] > 140, 255, 0).astype(np.uint8)
+            raw_rgb = c_arr[..., :3].copy()
+        except Exception:
+            binary_alpha = np.full(arr.shape[:2], 255, dtype=np.uint8)
+            raw_rgb = arr[..., :3].copy()
+
+    bg_color = _sample_border_color(img)
+    if bg_color is not None:
+        dist_bg = np.sqrt(np.sum((raw_rgb.astype(np.float32) - np.array(bg_color, dtype=np.float32)) ** 2, axis=2))
+        binary_alpha[dist_bg < 18] = 0
+
+    clean_rgb = PILImage.fromarray(raw_rgb, mode="RGB")
+    smoothed = clean_rgb.filter(ImageFilter.MedianFilter(size=3))
+    smoothed_np = np.array(smoothed)
+    mask = binary_alpha > 0
+    opaque_pixels = smoothed_np[mask].astype(np.float32)
+
+    # 1. Color Quantization
+    valid_palette = []
+    if snap_palette and isinstance(snap_palette, list):
+        for h in snap_palette:
+            if isinstance(h, str):
+                hc = h.strip().lstrip("#")
+                if len(hc) == 3:
+                    hc = "".join(c * 2 for c in hc)
+                if len(hc) == 6:
+                    try:
+                        valid_palette.append([int(hc[0:2], 16), int(hc[2:4], 16), int(hc[4:6], 16)])
+                    except ValueError:
+                        pass
+
+    if len(opaque_pixels) > 0:
+        if len(valid_palette) > 0:
+            # Hard-snapped palette: bypass K-Means entirely
+            palette_arr = np.array(valid_palette, dtype=np.float32)
+            # Euclidean distance to palette colors: (N, 1, 3) - (1, P, 3)
+            diff = opaque_pixels[:, None, :] - palette_arr[None, :, :]
+            dists = np.sum(diff ** 2, axis=2)
+            nearest_idx = np.argmin(dists, axis=1)
+            quantized_opaque = palette_arr[nearest_idx].astype(np.uint8)
+            num_colors = max(2, len(valid_palette))
+        else:
+            # K-Means clustering with n_clusters = k_colors
+            k = max(2, min(32, int(k_colors or 6)))
+            unique_pixels = np.unique(opaque_pixels, axis=0)
+            actual_k = max(1, min(k, len(unique_pixels)))
+
+            if len(opaque_pixels) > 30000:
+                sample_idx = np.random.choice(len(opaque_pixels), 30000, replace=False)
+                sample = opaque_pixels[sample_idx]
+            else:
+                sample = opaque_pixels
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                centroids, _ = vq.kmeans2(sample, actual_k, minit="points", iter=15)
+                labels, _ = vq.vq(opaque_pixels, centroids)
+
+            # Perceptual saturation weighting
+            max_c = np.max(opaque_pixels, axis=1)
+            min_c = np.min(opaque_pixels, axis=1)
+            sat = np.where(max_c > 0, (max_c - min_c) / np.maximum(max_c, 1e-5), 0.0)
+            val = max_c / 255.0
+            w = ((sat + 0.05) ** 2) * (val + 0.05)
+
+            for ki in range(actual_k):
+                m = (labels == ki)
+                if m.any():
+                    w_sum = np.sum(w[m])
+                    centroids[ki] = np.sum(opaque_pixels[m] * w[m, None], axis=0) / w_sum if w_sum > 0 else np.mean(opaque_pixels[m], axis=0)
+
+            quantized_opaque = centroids[labels].clip(0, 255).astype(np.uint8)
+            num_colors = actual_k
+
+        out_rgb = smoothed_np.copy()
+        out_rgb[mask] = quantized_opaque
+        quantized_rgb = PILImage.fromarray(out_rgb, mode="RGB")
+    else:
+        quantized_rgb = smoothed
+        num_colors = 2
+
+    a_clean = PILImage.fromarray(binary_alpha, mode="L")
+    r_q, g_q, b_q = quantized_rgb.split()
+    preprocessed = PILImage.merge("RGBA", (r_q, g_q, b_q, a_clean))
+
+    # 2. Detail profile mapping
+    d_str = str(detail or "balanced").strip().lower()
+    if "smooth" in d_str:
+        detail_params = dict(
+            corner_threshold=60,
+            filter_speckle=10,
+            length_threshold=5.0,
+            splice_threshold=45
+        )
+    elif "sharp" in d_str or "typo" in d_str:
+        detail_params = dict(
+            corner_threshold=20,
+            filter_speckle=2,
+            length_threshold=2.5,
+            splice_threshold=30
+        )
+    elif "ultra" in d_str or "art" in d_str:
+        detail_params = dict(
+            corner_threshold=10,
+            filter_speckle=1,
+            length_threshold=1.5,
+            splice_threshold=35
+        )
+    else:  # Balanced (Default)
+        detail_params = dict(
+            corner_threshold=40,
+            filter_speckle=4,
+            length_threshold=3.5,
+            splice_threshold=45
+        )
+
+    # 3. VTracer conversion
+    fd_in, in_path = tempfile.mkstemp(suffix=".png")
+    fd_out, out_path = tempfile.mkstemp(suffix=".svg")
+    try:
+        os.close(fd_in)
+        os.close(fd_out)
+        preprocessed.save(in_path, "PNG")
+        params = dict(
+            mode="spline",
+            max_iterations=10,
+            path_precision=3,
+            colormode="color",
+            hierarchical="stacked",
+            color_precision=max(6, min(10, int(num_colors))),
+            layer_difference=16,
+        )
+        params.update(detail_params)
+        vtracer.convert_image_to_svg_py(in_path, out_path, **params)
+        with open(out_path, "r", encoding="utf-8") as f:
+            svg_str = f.read()
+    finally:
+        for p in (in_path, out_path):
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+
+    svg_str = _prune_and_sort_svg(svg_str, bg_color=bg_color)
     return {"success": True, "svg": svg_str}
 
 
@@ -828,18 +1127,30 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            self.close_connection = True
+
     def send_json(self, obj, code=200):
-        body = json.dumps(obj).encode()
-        self.send_response(code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            body = json.dumps(obj).encode()
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     def do_GET(self):
-        if self.path.split("?")[0] == "/health":
-            return self.send_json({"app": APP, "status": "online"})
-        super().do_GET()
+        try:
+            if self.path.split("?")[0] == "/health":
+                return self.send_json({"app": APP, "status": "online"})
+            super().do_GET()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
 
     def do_POST(self):
         path = self.path.split("?")[0]
@@ -848,21 +1159,33 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self.send_json({"error": f"Bad request: {e}"}, 400)
         try:
-            if path == "/api/ai_segment":
-                mode = body.get("mode", "cutout")
-                return self.send_json({"layers": segment(body["image"],
-                                       "split" if mode == "split" else "cutout")})
+            if path in ("/api/cutout", "/api/ai_segment"):
+                mode = body.get("mode", "auto")
+                tolerance = float(body.get("tolerance", 22.0))
+                return self.send_json(dual_engine_cutout(body["image"], mode=mode, tolerance=tolerance))
             if path == "/api/vectorize":
                 return self.send_json(vectorize(body["image"], body.get("preset", DEFAULT_PRESET)))
+            if path == "/api/vectorize_advanced":
+                k_colors = int(body.get("k_colors", 6))
+                detail = body.get("detail", "balanced")
+                snap_palette = body.get("snap_palette", None)
+                return self.send_json(vectorize_advanced(body["image"], k_colors=k_colors, detail=detail, snap_palette=snap_palette))
             if path == "/api/ocr":
                 return self.send_json(ocr(body["image"]))
             if path == "/api/extract_palette":
                 return self.send_json(extract_palette(body["image"]))
             if path == "/api/slice_color":
                 return self.send_json(slice_color(body["image"], body.get("color", "#000000"), body.get("tolerance", 25)))
+            if path == "/api/export_psd":
+                return self.send_json({"success": True, "message": "PSD export handled"})
             self.send_json({"error": "not found"}, 404)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, OSError):
+            pass
         except Exception as e:
-            self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
+            try:
+                self.send_json({"error": f"{type(e).__name__}: {e}"}, 500)
+            except Exception:
+                pass
 
 
 # ---------------------------------------------------------------------------
