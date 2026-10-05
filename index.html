@@ -125,65 +125,80 @@
         </div>
 
         <div id="toolbarCanvas" class="flex flex-wrap gap-y-1.5 items-center gap-2 hidden">
-          <!-- Tool Modes: Select (V) / Lasso (L) / Pan (H) -->
-          <div id="toolModeBar" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium">
-            <button id="btnToolSelect" data-tool="select" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 transition" title="Select (V) - click, Shift+click or drag a marquee box to select">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg> Select
+          <!-- Tools: Select, Lasso, Eraser, Pan -->
+          <div id="toolModeBar" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium shadow-sm" title="Tools">
+            <button id="btnToolSelect" data-tool="select" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 transition" title="Select (V) - click, Shift+click or drag a marquee box to select">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg> <span>Select</span>
             </button>
-            <button id="btnToolLasso" data-tool="lasso" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Lasso (L) - draw a freehand loop; objects whose centre falls inside get selected">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2.5"><path d="M7 22a5 5 0 0 1-2-4"/><path d="M3.3 14A6.8 6.8 0 0 1 2 10c0-4.4 4.5-8 10-8s10 3.6 10 8-4.5 8-10 8a12 12 0 0 1-5-1" stroke-dasharray="none"/><path d="M5 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke-dasharray="none"/></svg> Lasso
+            <button id="btnToolLasso" data-tool="lasso" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Lasso (L) - draw a freehand loop; objects whose center falls inside get selected">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2.5"><path d="M7 22a5 5 0 0 1-2-4"/><path d="M3.3 14A6.8 6.8 0 0 1 2 10c0-4.4 4.5-8 10-8s10 3.6 10 8-4.5 8-10 8a12 12 0 0 1-5-1" stroke-dasharray="none"/><path d="M5 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" stroke-dasharray="none"/></svg> <span>Lasso</span>
             </button>
-            <button id="btnToolEraser" data-tool="eraser" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Eraser (E) - click any stray vector path to erase it (even inside groups)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg> Eraser
+            <button id="btnToolEraser" data-tool="eraser" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Eraser (E) - hover over vector paths to preview red target, click to erase">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg> <span>Eraser</span>
             </button>
-            <button id="btnToolPan" data-tool="pan" class="px-2 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Pan viewport (H) - or hold Space and drag">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> Pan
+            <button id="btnToolPan" data-tool="pan" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Pan viewport (H) - or hold Space and drag">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> <span>Pan</span>
             </button>
           </div>
-          <div class="h-4 w-px bg-slate-700 mx-1"></div>
 
-          <!-- Undo / Redo -->
-          <button id="btnUndo" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Undo (Ctrl+Z)"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>
-          <button id="btnRedo" class="p-1.5 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white" title="Redo (Ctrl+Y)"><i data-lucide="redo-2" class="w-3.5 h-3.5"></i></button>
-          <div class="h-4 w-px bg-slate-700 mx-1"></div>
+          <!-- Divider -->
+          <div class="h-4 w-px bg-slate-700/80 mx-0.5"></div>
 
-          <!-- Group / Ungroup & Group by Color -->
-          <button id="btnUngroup" disabled class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium opacity-40 cursor-not-allowed" title="Ungroup (Ctrl+Shift+G) - release a group's children back to independent layers">Ungroup</button>
-          <button id="btnGroup" disabled class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] font-medium opacity-40 cursor-not-allowed" title="Group Selected (Ctrl+G) - needs a multi-selection">Group Selected</button>
-          <button id="btnGroupByColor" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-amber-300 hover:text-white text-[11px] font-medium flex items-center gap-1" title="Merge paths sharing identical fill colors into compound color family groups">
-            <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Group by Color
-          </button>
-          <div class="h-4 w-px bg-slate-700 mx-1"></div>
-
-          <!-- Add Shapes Dropdown -->
-          <div class="relative inline-block text-left">
-            <button id="btnShapeMenu" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] flex items-center gap-1">
-              <i data-lucide="shapes" class="w-3.5 h-3.5 text-amber-400"></i> Add Shape <i data-lucide="chevron-down" class="w-3 h-3"></i>
+          <!-- Add: Text (T), Shape, Brush -->
+          <div id="toolbarGroupAdd" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium shadow-sm" title="Add">
+            <!-- Text Tool (T) -->
+            <button id="btnToolText" class="px-2.5 py-1 text-slate-300 hover:text-white flex items-center gap-1 transition" title="Add Text Layer (T)">
+              <i data-lucide="type" class="w-3.5 h-3.5 text-sky-400"></i> <span>Text (T)</span>
             </button>
-            <div id="shapeDropdown" class="hidden absolute left-0 mt-1 w-36 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-xl z-50 py-1 text-xs">
-              <button onclick="addParametricShape('rect')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Rectangle</button>
-              <button onclick="addParametricShape('rounded')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Rounded Box</button>
-              <button onclick="addParametricShape('circle')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Circle</button>
-              <button onclick="addParametricShape('triangle')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Triangle</button>
-              <button onclick="addParametricShape('star')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Star (5-Point)</button>
-              <button onclick="addParametricShape('polygon')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Hexagon</button>
+
+            <!-- Shape Dropdown -->
+            <div class="relative inline-block text-left border-l border-[#2c2f3d]">
+              <button id="btnShapeMenu" class="px-2.5 py-1 text-slate-300 hover:text-white flex items-center gap-1 transition" title="Add parametric shapes">
+                <i data-lucide="shapes" class="w-3.5 h-3.5 text-amber-400"></i> <span>Shape</span> <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+              </button>
+              <div id="shapeDropdown" class="hidden absolute left-0 mt-1 w-36 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-xl z-50 py-1 text-xs">
+                <button onclick="addParametricShape('rect')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Rectangle</button>
+                <button onclick="addParametricShape('rounded')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Rounded Box</button>
+                <button onclick="addParametricShape('circle')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Circle</button>
+                <button onclick="addParametricShape('triangle')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Triangle</button>
+                <button onclick="addParametricShape('star')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Star (5-Point)</button>
+                <button onclick="addParametricShape('polygon')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Hexagon</button>
+              </div>
             </div>
+
+            <!-- Draw Brush Toggle -->
+            <button id="btnToggleDraw" class="px-2.5 py-1 text-slate-300 hover:text-white border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Toggle Freehand Drawing Brush">
+              <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-indigo-400"></i> <span>Brush</span>
+            </button>
           </div>
 
-          <!-- Freehand Draw Toggle -->
-          <button id="btnToggleDraw" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-white text-[11px] flex items-center gap-1">
-            <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-indigo-400"></i> Draw Brush
-          </button>
+          <!-- Divider -->
+          <div class="h-4 w-px bg-slate-700/80 mx-0.5"></div>
 
-          <!-- Punch Out / Subtraction -->
-          <button id="btnPunchOut" class="px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400 text-[11px] flex items-center gap-1" title="Cut hole through artwork using active shape">
-            <i data-lucide="scissors" class="w-3.5 h-3.5 text-red-400"></i> Punch Out
-          </button>
+          <!-- Actions: Group Selected, Ungroup, Delete -->
+          <div id="toolbarGroupActions" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium shadow-sm" title="Actions">
+            <button id="btnGroup" disabled class="px-2.5 py-1 text-slate-300 hover:text-white text-[11px] font-medium opacity-40 cursor-not-allowed transition" title="Group Selected (Ctrl+G) - needs a multi-selection">Group Selected</button>
+            <button id="btnUngroup" disabled class="px-2.5 py-1 text-slate-300 hover:text-white text-[11px] font-medium opacity-40 cursor-not-allowed border-l border-[#2c2f3d] transition" title="Ungroup (Ctrl+Shift+G) - release a group's children back to independent layers">Ungroup</button>
+            <button id="btnToolbarDelete" class="px-2 py-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 border-l border-[#2c2f3d] transition flex items-center gap-1" title="Delete Selected (Del / Backspace)"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> <span>Delete</span></button>
+          </div>
 
-          <!-- Eyedropper (hotkey: I) -->
-          <button class="btn-eyedropper px-2 py-1 rounded bg-[#20222a] border border-slate-700 text-slate-300 hover:text-amber-400 text-[11px] flex items-center gap-1" title="Eyedropper (I) - sample a colour into the active object's Fill">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg> Eyedropper
-          </button>
+          <!-- Divider -->
+          <div class="h-4 w-px bg-slate-700/80 mx-0.5"></div>
+
+          <!-- Utilities: Group by Color, Punch Out, Undo, Redo, Eyedropper -->
+          <div id="toolbarGroupUtil" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium shadow-sm" title="Utilities">
+            <button id="btnGroupByColor" class="px-2 py-1 text-amber-300 hover:text-white transition flex items-center gap-1" title="Merge paths sharing identical fill colors into compound color family groups">
+              <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> <span class="hidden md:inline">Group by Color</span>
+            </button>
+            <button id="btnPunchOut" class="px-2 py-1 text-slate-300 hover:text-amber-400 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Cut hole through artwork using active shape (destination-out)">
+              <i data-lucide="scissors" class="w-3.5 h-3.5 text-red-400"></i> <span class="hidden md:inline">Punch Out</span>
+            </button>
+            <button id="btnUndo" class="px-2 py-1 text-slate-300 hover:text-white hover:bg-slate-800/50 border-l border-[#2c2f3d] transition flex items-center gap-1" title="Undo (Ctrl+Z)"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>
+            <button id="btnRedo" class="px-2 py-1 text-slate-300 hover:text-white hover:bg-slate-800/50 border-l border-[#2c2f3d] transition flex items-center gap-1" title="Redo (Ctrl+Y)"><i data-lucide="redo-2" class="w-3.5 h-3.5"></i></button>
+            <button class="btn-eyedropper px-2 py-1 text-slate-300 hover:text-amber-400 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Eyedropper (I) - sample a colour into the active object's Fill">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+            </button>
+          </div>
         </div>
 
         <div id="toolbarLowerThird" class="flex items-center gap-2 hidden">
@@ -333,8 +348,84 @@
               </button>
             </div>
 
-            <!-- Standard Vector & Text Property Controls -->
-            <div id="panelStandardProps" class="space-y-3">
+            <!-- Text Properties Panel (Shown when a fabric.IText is selected) -->
+            <div id="panelTextProps" class="hidden space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span class="text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="type" class="w-3.5 h-3.5"></i> Text Properties
+                </span>
+                <span class="text-[9px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-1.5 py-0.5 rounded font-mono">Text Layer</span>
+              </div>
+
+              <!-- Font Family Dropdown -->
+              <div>
+                <label class="text-slate-300 text-[11px] font-medium block mb-1">Font Family:</label>
+                <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1.5 rounded text-xs text-white focus:border-amber-400 focus:outline-none">
+                  <option value="Arial" selected>Arial</option>
+                  <option value="Impact">Impact</option>
+                  <option value="Courier New">Courier</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Comic Sans MS">Comic Sans</option>
+                  <option value="Bebas Neue">Bebas Neue</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Georgia">Georgia</option>
+                </select>
+              </div>
+
+              <!-- Font Size Slider -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-300 text-[11px] font-medium">Font Size:</label>
+                  <span id="fontSizeVal" class="font-mono text-amber-400 font-bold text-xs bg-black/40 px-2 py-0.5 rounded border border-slate-800">40</span>
+                </div>
+                <input type="range" id="propFontSize" min="8" max="250" value="40" class="w-full accent-amber-500 cursor-pointer">
+                <div class="flex justify-between text-[9px] text-slate-500 font-mono mt-0.5">
+                  <span>8px</span>
+                  <span>120px</span>
+                  <span>250px</span>
+                </div>
+              </div>
+
+              <!-- Text Alignment -->
+              <div>
+                <label class="text-slate-300 text-[11px] font-medium block mb-1">Text Alignment:</label>
+                <div id="textAlignGroup" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#1c1d24] overflow-hidden text-[11px]">
+                  <button type="button" data-align="left" id="btnAlignLeft" class="flex-1 py-1.5 text-slate-300 hover:text-white flex justify-center items-center gap-1 transition bg-amber-500/25 text-amber-300 font-bold" title="Align Left">
+                    <i data-lucide="align-left" class="w-3.5 h-3.5"></i> <span>Left</span>
+                  </button>
+                  <button type="button" data-align="center" id="btnAlignCenter" class="flex-1 py-1.5 text-slate-300 hover:text-white border-l border-[#2c2f3d] flex justify-center items-center gap-1 transition" title="Align Center">
+                    <i data-lucide="align-center" class="w-3.5 h-3.5"></i> <span>Center</span>
+                  </button>
+                  <button type="button" data-align="right" id="btnAlignRight" class="flex-1 py-1.5 text-slate-300 hover:text-white border-l border-[#2c2f3d] flex justify-center items-center gap-1 transition" title="Align Right">
+                    <i data-lucide="align-right" class="w-3.5 h-3.5"></i> <span>Right</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Text Color -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-300 text-[11px] font-medium">Text Color:</label>
+                  <input type="text" id="propTextFillHex" value="#FFFFFF" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
+                </div>
+                <input type="color" id="propTextFillColor" value="#FFFFFF" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+              </div>
+            </div>
+
+            <!-- Fill & Shape Properties Panel (Shown for standard vectors, shapes & groups) -->
+            <div id="panelFillProps" class="space-y-3">
+              <!-- Group Ungroup Notice Banner -->
+              <div id="groupUngroupNotice" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 text-[11px] text-amber-300 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-semibold flex items-center gap-1"><i data-lucide="package" class="w-3.5 h-3.5 text-amber-400"></i> Compound Group</span>
+                  <span id="groupNoticeCount" class="text-[9px] font-mono bg-amber-500/20 px-1.5 py-0.5 rounded">0 paths</span>
+                </div>
+                <p class="text-[10px] text-slate-300 leading-tight">Ungroup this artwork to select and recolor individual vector pieces separately.</p>
+                <button type="button" id="btnNoticeUngroup" class="w-full py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-xs transition flex items-center justify-center gap-1 shadow-sm">
+                  <i data-lucide="ungroup" class="w-3 h-3"></i> Ungroup to Recolor Pieces
+                </button>
+              </div>
+
               <!-- Brand Swatches -->
               <div class="pb-2.5 border-b border-slate-800">
                 <div class="flex items-center justify-between mb-1.5">
@@ -350,17 +441,59 @@
                 </div>
               </div>
 
-              <!-- Fill Color -->
+              <!-- Fill Properties Header & Type Selector -->
               <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-slate-400 text-[11px]">Fill Color:</label>
-                  <input type="text" id="propFillHex" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-slate-300 text-[11px] font-medium">Fill Type:</label>
+                  <select id="selFillType" class="bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white focus:border-amber-400 focus:outline-none">
+                    <option value="solid" selected>Solid Color</option>
+                    <option value="gradient">Linear Gradient</option>
+                  </select>
                 </div>
-                <input type="color" id="propFillColor" value="#F59E0B" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+
+                <!-- Solid Color Section -->
+                <div id="sectionSolidFill">
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="text-slate-400 text-[10px]">Solid Color:</label>
+                    <input type="text" id="propFillHex" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1.5 py-0.5 rounded font-mono text-[10px] w-20 text-center text-slate-200">
+                  </div>
+                  <input type="color" id="propFillColor" value="#F59E0B" class="w-full h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+                </div>
+
+                <!-- Gradient Engine Section -->
+                <div id="sectionGradientFill" class="hidden space-y-2.5 bg-[#181921] p-2.5 rounded-lg border border-[#2b2d3b]">
+                  <div class="flex items-center justify-between">
+                    <label class="text-slate-300 text-[10px] font-medium">Start Color:</label>
+                    <div class="flex items-center gap-1.5">
+                      <input type="text" id="gradHex1" value="#F59E0B" class="bg-[#1c1d24] border border-slate-700 px-1 py-0.5 rounded font-mono text-[9px] w-16 text-center text-slate-200">
+                      <input type="color" id="gradColor1" value="#F59E0B" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-slate-300 text-[10px] font-medium">End Color:</label>
+                    <div class="flex items-center gap-1.5">
+                      <input type="text" id="gradHex2" value="#EF4444" class="bg-[#1c1d24] border border-slate-700 px-1 py-0.5 rounded font-mono text-[9px] w-16 text-center text-slate-200">
+                      <input type="color" id="gradColor2" value="#EF4444" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
+                    </div>
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-slate-300 text-[10px] font-medium">Gradient Angle:</label>
+                      <span id="gradAngleVal" class="font-mono text-amber-400 font-bold text-xs bg-black/40 px-1.5 py-0.5 rounded border border-slate-800">0°</span>
+                    </div>
+                    <input type="range" id="gradAngle" min="0" max="360" value="0" class="w-full accent-amber-500 cursor-pointer">
+                    <div class="flex justify-between text-[9px] text-slate-500 font-mono mt-0.5">
+                      <span>0° (Right)</span>
+                      <span>90° (Down)</span>
+                      <span>180°</span>
+                      <span>270°</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Stroke Color & Width -->
-              <div>
+              <div class="pt-2 border-t border-slate-800">
                 <div class="flex items-center justify-between mb-1">
                   <label class="text-slate-400 text-[11px]">Stroke:</label>
                   <input type="color" id="propStrokeColor" value="#000000" class="w-6 h-6 rounded border border-slate-700 bg-transparent cursor-pointer">
@@ -368,29 +501,6 @@
                 <div class="flex items-center gap-2">
                   <input type="range" id="propStrokeWidth" min="0" max="30" value="0" class="w-full accent-amber-500">
                   <span id="strokeWidthVal" class="font-mono text-[11px] text-slate-400 w-6">0</span>
-                </div>
-              </div>
-
-              <!-- Typography Controls -->
-              <div id="textControls" class="space-y-2 pt-2 border-t border-slate-800">
-                <div>
-                  <label class="text-slate-400 text-[11px]">Font Family:</label>
-                  <select id="propFontFamily" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-xs text-white mt-0.5">
-                    <option value="Impact">Impact (Headline)</option>
-                    <option value="Bebas Neue">Bebas Neue (Condensed)</option>
-                    <option value="Cooper Black">Cooper Black (Retro)</option>
-                    <option value="Montserrat">Montserrat (Geometric Sans)</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Georgia">Georgia (Serif)</option>
-                    <option value="Courier New">Courier New</option>
-                  </select>
-                </div>
-                <div>
-                  <div class="flex items-center justify-between">
-                    <label class="text-slate-400 text-[11px]">Font Size:</label>
-                    <span id="fontSizeVal" class="font-mono text-[11px] text-slate-400">72</span>
-                  </div>
-                  <input type="range" id="propFontSize" min="8" max="250" value="72" class="w-full accent-amber-500">
                 </div>
               </div>
             </div>
@@ -655,6 +765,7 @@
     }
 
     document.getElementById('btnDeleteSelected').addEventListener('click', deleteActive);
+    document.getElementById('btnToolbarDelete')?.addEventListener('click', deleteActive);
 
     // Global Keyboard Listeners
     window.addEventListener('keydown', (e) => {
@@ -1215,6 +1326,7 @@
       try {
         group = active.toGroup();
         group.name = `Group (${members.length} items)`;
+        group.subTargetCheck = true;
         setGroupChildChrome(group);
         // toGroup() appends to the top of the stack; drop it back where the
         // topmost member used to live so overlapping artwork keeps its order.
@@ -1283,6 +1395,7 @@
           const grp = new fabric.Group(bucket, {
             name: `${famName} Family (${hex} • ${bucket.length} paths)`
           });
+          grp.subTargetCheck = true;
           snapGroupToArtwork(grp);
           fCanvas.add(grp);
           newGroups.push(grp);
@@ -1659,39 +1772,212 @@
       highlightActiveLayers();
     }
 
+    function ensureHex(c) {
+      if (!c || typeof c !== 'string') return '#F59E0B';
+      if (c.startsWith('#') && (c.length === 7 || c.length === 4)) {
+        if (c.length === 4) return '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+        return c;
+      }
+      try {
+        const dummy = document.createElement('canvas').getContext('2d');
+        dummy.fillStyle = c;
+        const comp = dummy.fillStyle;
+        if (comp && comp.startsWith('#')) return comp;
+      } catch (err) {}
+      return '#F59E0B';
+    }
+
+    function highlightTextAlign(align) {
+      ['left', 'center', 'right'].forEach(a => {
+        const btn = document.getElementById('btnAlign' + a.charAt(0).toUpperCase() + a.slice(1));
+        if (!btn) return;
+        const match = a === align;
+        btn.classList.toggle('bg-amber-500/25', match);
+        btn.classList.toggle('text-amber-300', match);
+        btn.classList.toggle('font-bold', match);
+        btn.classList.toggle('text-slate-300', !match);
+      });
+    }
+
+    function syncFillUI(active) {
+      const selFillType = document.getElementById('selFillType');
+      const secSolid = document.getElementById('sectionSolidFill');
+      const secGrad = document.getElementById('sectionGradientFill');
+
+      const fill = active.fill;
+      const isGradient = fill && typeof fill === 'object' && Array.isArray(fill.colorStops);
+
+      if (isGradient) {
+        if (selFillType) selFillType.value = 'gradient';
+        if (secSolid) secSolid.classList.add('hidden');
+        if (secGrad) secGrad.classList.remove('hidden');
+
+        const stops = fill.colorStops;
+        const c1 = stops[0]?.color || '#F59E0B';
+        const c2 = stops[stops.length - 1]?.color || '#EF4444';
+        const hex1 = ensureHex(c1), hex2 = ensureHex(c2);
+        const col1 = document.getElementById('gradColor1'), hex1Input = document.getElementById('gradHex1');
+        const col2 = document.getElementById('gradColor2'), hex2Input = document.getElementById('gradHex2');
+        if (col1) col1.value = hex1;
+        if (hex1Input) hex1Input.value = hex1.toUpperCase();
+        if (col2) col2.value = hex2;
+        if (hex2Input) hex2Input.value = hex2.toUpperCase();
+
+        if (fill.coords) {
+          const dx = (fill.coords.x2 ?? 0) - (fill.coords.x1 ?? 0);
+          const dy = (fill.coords.y2 ?? 0) - (fill.coords.y1 ?? 0);
+          let deg = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
+          if (deg < 0) deg += 360;
+          const aInput = document.getElementById('gradAngle');
+          const aVal = document.getElementById('gradAngleVal');
+          if (aInput) aInput.value = deg;
+          if (aVal) aVal.innerText = deg + '°';
+        }
+      } else {
+        if (selFillType) selFillType.value = 'solid';
+        if (secSolid) secSolid.classList.remove('hidden');
+        if (secGrad) secGrad.classList.add('hidden');
+
+        if (typeof fill === 'string') {
+          const hex = ensureHex(fill);
+          const fCol = document.getElementById('propFillColor');
+          const fHex = document.getElementById('propFillHex');
+          if (fCol) fCol.value = hex;
+          if (fHex) fHex.value = hex.toUpperCase();
+        }
+      }
+    }
+
+    function applyGradientToActive() {
+      const active = editableActive();
+      if (!active) return;
+
+      const c1 = document.getElementById('gradColor1')?.value || '#F59E0B';
+      const c2 = document.getElementById('gradColor2')?.value || '#EF4444';
+      const angle = parseInt(document.getElementById('gradAngle')?.value, 10) || 0;
+
+      function makeGrad(targetObj) {
+        const w = targetObj.width || 100;
+        const h = targetObj.height || 100;
+        const cx = w / 2;
+        const cy = h / 2;
+        const rad = angle * Math.PI / 180;
+        const dx = Math.cos(rad) * (w / 2);
+        const dy = Math.sin(rad) * (h / 2);
+        return new fabric.Gradient({
+          type: 'linear',
+          gradientUnits: 'pixels',
+          coords: {
+            x1: cx - dx,
+            y1: cy - dy,
+            x2: cx + dx,
+            y2: cy + dy
+          },
+          colorStops: [
+            { offset: 0, color: c1 },
+            { offset: 1, color: c2 }
+          ]
+        });
+      }
+
+      if (active.type === 'activeSelection') {
+        active.getObjects().forEach(o => {
+          if (!o.locked) {
+            o.set('fill', makeGrad(o));
+            o.dirty = true;
+          }
+        });
+        active.dirty = true;
+      } else if (active.type === 'group') {
+        active.getObjects().forEach(o => {
+          if (!o.locked) {
+            o.set('fill', makeGrad(o));
+            o.dirty = true;
+          }
+        });
+        active.set('fill', makeGrad(active));
+        active.dirty = true;
+      } else {
+        active.set('fill', makeGrad(active));
+        active.dirty = true;
+      }
+
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+    }
+
     function syncInspector() {
       const active = fCanvas.getActiveObject();
       const pVector = document.getElementById('panelVectorStudio');
-      const pStd = document.getElementById('panelStandardProps');
+      const pText = document.getElementById('panelTextProps');
+      const pFill = document.getElementById('panelFillProps');
       const title = document.getElementById('inspectorTitle');
 
+      // 1. Raster Image selected -> Vector Studio
       if (active && active.type === 'image') {
         if (pVector) pVector.classList.remove('hidden');
-        if (pStd) pStd.classList.add('hidden');
+        if (pText) pText.classList.add('hidden');
+        if (pFill) pFill.classList.add('hidden');
         if (title) title.innerText = "Vector Separation Studio";
         return;
-      } else {
-        if (pVector) pVector.classList.add('hidden');
-        if (pStd) pStd.classList.remove('hidden');
-        if (title) title.innerText = "Property Inspector";
+      }
+      if (pVector) pVector.classList.add('hidden');
+
+      // 2. Text selected -> Text Properties Panel
+      const isText = active && (active.type === 'i-text' || active.type === 'text' || (active.isType && active.isType('text')));
+      if (isText) {
+        if (pText) pText.classList.remove('hidden');
+        if (pFill) pFill.classList.add('hidden');
+        if (title) title.innerText = "Text Properties";
+
+        const fFam = document.getElementById('propFontFamily');
+        const fSize = document.getElementById('propFontSize');
+        const fVal = document.getElementById('fontSizeVal');
+        if (fFam) fFam.value = active.fontFamily || 'Arial';
+        if (fSize) fSize.value = active.fontSize || 40;
+        if (fVal) fVal.innerText = active.fontSize || 40;
+        highlightTextAlign(active.textAlign || 'left');
+
+        if (typeof active.fill === 'string') {
+          const hex = ensureHex(active.fill);
+          const tCol = document.getElementById('propTextFillColor');
+          const tHex = document.getElementById('propTextFillHex');
+          if (tCol) tCol.value = hex;
+          if (tHex) tHex.value = hex.toUpperCase();
+        }
+        return;
+      }
+
+      // 3. Shapes, Paths, Groups, ActiveSelection, or empty selection -> Fill Properties
+      if (pText) pText.classList.add('hidden');
+      if (pFill) pFill.classList.remove('hidden');
+      if (title) title.innerText = active ? "Fill & Shape Properties" : "Property Inspector";
+
+      // Group Notice: Show prominently if a group is selected
+      const groupNotice = document.getElementById('groupUngroupNotice');
+      if (groupNotice) {
+        const isGrp = active && active.type === 'group';
+        groupNotice.classList.toggle('hidden', !isGrp);
+        if (isGrp) {
+          const cnt = active.getObjects ? active.getObjects().length : 0;
+          const badge = document.getElementById('groupNoticeCount');
+          if (badge) badge.innerText = `${cnt} paths`;
+        }
       }
 
       if (!active) return;
-      if (active.fill && typeof active.fill === 'string') {
-        document.getElementById('propFillColor').value = active.fill;
-        document.getElementById('propFillHex').value = active.fill.toUpperCase();
-      }
-      if (active.stroke && typeof active.stroke === 'string') {
-        document.getElementById('propStrokeColor').value = active.stroke;
-      }
-      document.getElementById('propStrokeWidth').value = active.strokeWidth || 0;
-      document.getElementById('strokeWidthVal').innerText = active.strokeWidth || 0;
 
-      if (active.type && active.type.includes('text')) {
-        document.getElementById('propFontSize').value = active.fontSize || 72;
-        document.getElementById('fontSizeVal').innerText = active.fontSize || 72;
-        document.getElementById('propFontFamily').value = active.fontFamily || 'Impact';
+      // Sync Fill & Gradient state
+      syncFillUI(active);
+
+      if (active.stroke && typeof active.stroke === 'string') {
+        const sCol = document.getElementById('propStrokeColor');
+        if (sCol) sCol.value = ensureHex(active.stroke);
       }
+      const sWidth = document.getElementById('propStrokeWidth');
+      const sVal = document.getElementById('strokeWidthVal');
+      if (sWidth) sWidth.value = active.strokeWidth || 0;
+      if (sVal) sVal.innerText = active.strokeWidth || 0;
     }
 
     // Vector Studio slider live numeric display
@@ -1828,45 +2114,158 @@
       return active;
     }
 
-    document.getElementById('propFillColor').addEventListener('input', (e) => {
+    // Native Text Tool (T) button
+    document.getElementById('btnToolText')?.addEventListener('click', () => {
+      const textObj = new fabric.IText('Double click to edit', {
+        left: 100,
+        top: 100,
+        fontFamily: 'Arial',
+        fontSize: 40,
+        fill: '#ffffff',
+        name: 'Text Layer'
+      });
+      fCanvas.add(textObj);
+      fCanvas.setActiveObject(textObj);
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+      updateLayersUI();
+      syncInspector();
+      document.getElementById('statusText').innerText = 'Added Text layer. Double-click to edit!';
+    });
+
+    // Text Properties Listeners
+    document.getElementById('propFontFamily')?.addEventListener('change', (e) => {
       const val = e.target.value;
-      document.getElementById('propFillHex').value = val.toUpperCase();
+      const active = editableActive();
+      if (active && (active.type === 'i-text' || active.type === 'text' || (active.isType && active.isType('text')))) {
+        active.set('fontFamily', val);
+        fCanvas.renderAll();
+        saveCanvasState();
+      }
+    });
+
+    document.getElementById('propFontSize')?.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10) || 40;
+      const fVal = document.getElementById('fontSizeVal');
+      if (fVal) fVal.innerText = val;
+      const active = editableActive();
+      if (active && (active.type === 'i-text' || active.type === 'text' || (active.isType && active.isType('text')))) {
+        active.set('fontSize', val);
+        fCanvas.renderAll();
+      }
+    });
+    document.getElementById('propFontSize')?.addEventListener('change', () => saveCanvasState());
+
+    ['left', 'center', 'right'].forEach(align => {
+      const btn = document.getElementById('btnAlign' + align.charAt(0).toUpperCase() + align.slice(1));
+      btn?.addEventListener('click', () => {
+        const active = editableActive();
+        if (active && (active.type === 'i-text' || active.type === 'text' || (active.isType && active.isType('text')))) {
+          active.set('textAlign', align);
+          highlightTextAlign(align);
+          fCanvas.renderAll();
+          saveCanvasState();
+        }
+      });
+    });
+
+    document.getElementById('propTextFillColor')?.addEventListener('input', (e) => {
+      const val = e.target.value;
+      const hexInput = document.getElementById('propTextFillHex');
+      if (hexInput) hexInput.value = val.toUpperCase();
+      const active = editableActive();
+      if (active && (active.type === 'i-text' || active.type === 'text' || (active.isType && active.isType('text')))) {
+        active.set('fill', val);
+        fCanvas.renderAll();
+      }
+    });
+    document.getElementById('propTextFillColor')?.addEventListener('change', () => saveCanvasState());
+
+    document.getElementById('propTextFillHex')?.addEventListener('change', (e) => {
+      const val = e.target.value;
+      const colInput = document.getElementById('propTextFillColor');
+      if (colInput) colInput.value = val;
+      const active = editableActive();
+      if (active && (active.type === 'i-text' || active.type === 'text' || (active.isType && active.isType('text')))) {
+        active.set('fill', val);
+        fCanvas.renderAll();
+        saveCanvasState();
+      }
+    });
+
+    // Fill Properties & Gradient Listeners
+    document.getElementById('selFillType')?.addEventListener('change', (e) => {
+      const isGrad = e.target.value === 'gradient';
+      document.getElementById('sectionSolidFill')?.classList.toggle('hidden', isGrad);
+      document.getElementById('sectionGradientFill')?.classList.toggle('hidden', !isGrad);
+      const active = editableActive();
+      if (!active) return;
+      if (isGrad) {
+        applyGradientToActive();
+      } else {
+        const solidColor = document.getElementById('propFillColor')?.value || '#F59E0B';
+        setStyleOnActive(active, 'fill', solidColor);
+        fCanvas.requestRenderAll();
+        saveCanvasState();
+      }
+    });
+
+    document.getElementById('propFillColor')?.addEventListener('input', (e) => {
+      const val = e.target.value;
+      const hexInput = document.getElementById('propFillHex');
+      if (hexInput) hexInput.value = val.toUpperCase();
       const active = editableActive();
       if (active) { setStyleOnActive(active, 'fill', val); fCanvas.renderAll(); }
     });
+    document.getElementById('propFillColor')?.addEventListener('change', () => saveCanvasState());
 
-    document.getElementById('propFillHex').addEventListener('change', (e) => {
+    document.getElementById('propFillHex')?.addEventListener('change', (e) => {
       const val = e.target.value;
-      document.getElementById('propFillColor').value = val;
+      const colInput = document.getElementById('propFillColor');
+      if (colInput) colInput.value = val;
       const active = editableActive();
-      if (active) { setStyleOnActive(active, 'fill', val); fCanvas.renderAll(); }
+      if (active) { setStyleOnActive(active, 'fill', val); fCanvas.renderAll(); saveCanvasState(); }
     });
 
-    document.getElementById('propStrokeColor').addEventListener('input', (e) => {
+    ['gradColor1', 'gradColor2'].forEach((id, idx) => {
+      const colorInput = document.getElementById(id);
+      const hexInput = document.getElementById(idx === 0 ? 'gradHex1' : 'gradHex2');
+      colorInput?.addEventListener('input', (e) => {
+        if (hexInput) hexInput.value = e.target.value.toUpperCase();
+        applyGradientToActive();
+      });
+      hexInput?.addEventListener('change', (e) => {
+        if (colorInput) colorInput.value = e.target.value;
+        applyGradientToActive();
+      });
+    });
+
+    const gradAngle = document.getElementById('gradAngle');
+    const gradAngleVal = document.getElementById('gradAngleVal');
+    gradAngle?.addEventListener('input', (e) => {
+      if (gradAngleVal) gradAngleVal.innerText = e.target.value + '°';
+      applyGradientToActive();
+    });
+
+    document.getElementById('btnNoticeUngroup')?.addEventListener('click', () => {
+      ungroupActive();
+    });
+
+    document.getElementById('propStrokeColor')?.addEventListener('input', (e) => {
       const val = e.target.value;
       const active = editableActive();
       if (active) { setStyleOnActive(active, 'stroke', val); fCanvas.renderAll(); }
     });
+    document.getElementById('propStrokeColor')?.addEventListener('change', () => saveCanvasState());
 
-    document.getElementById('propStrokeWidth').addEventListener('input', (e) => {
+    document.getElementById('propStrokeWidth')?.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
-      document.getElementById('strokeWidthVal').innerText = val;
+      const sVal = document.getElementById('strokeWidthVal');
+      if (sVal) sVal.innerText = val;
       const active = editableActive();
       if (active) { setStyleOnActive(active, 'strokeWidth', val); fCanvas.renderAll(); }
     });
-
-    document.getElementById('propFontSize').addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      document.getElementById('fontSizeVal').innerText = val;
-      const active = editableActive();
-      if (active && active.type.includes('text')) { active.set('fontSize', val); fCanvas.renderAll(); }
-    });
-
-    document.getElementById('propFontFamily').addEventListener('change', (e) => {
-      const val = e.target.value;
-      const active = editableActive();
-      if (active && active.type.includes('text')) { active.set('fontFamily', val); fCanvas.renderAll(); }
-    });
+    document.getElementById('propStrokeWidth')?.addEventListener('change', () => saveCanvasState());
 
     // Z-Ordering (buttons + Ctrl+] / Ctrl+[ / Ctrl+Shift+] / Ctrl+Shift+[)
     document.getElementById('btnBringForward').addEventListener('click', () => orderActive('forward'));
@@ -2019,6 +2418,7 @@
     document.getElementById('tabLowerThird').addEventListener('click', () => switchTab('lowerthird'));
 
     function switchTab(t) {
+      if (typeof clearEraserHover === 'function') clearEraserHover();
       ['tabDeconstruct', 'tabCanvas', 'tabLowerThird'].forEach(id => {
         document.getElementById(id).className = "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5";
       });
@@ -2951,9 +3351,9 @@
     const LASSO_COLOR = '#06b6d4';
     const TOOL_BUTTONS = { select: 'btnToolSelect', lasso: 'btnToolLasso', eraser: 'btnToolEraser', pan: 'btnToolPan' };
     const TOOL_LABELS = {
-      select: 'Select (V): click, Shift+click to toggle, or drag a marquee box.',
+      select: 'Pointer (V): click, Shift+click to toggle, or drag a marquee box.',
       lasso: 'Lasso (L): drag a freehand loop around objects, release to select them (Esc cancels).',
-      eraser: 'Eraser (E): click any stray vector path to erase it (even inside groups).',
+      eraser: 'Eraser (E): hover over paths to preview red target, click to erase (even inside groups).',
       pan: 'Pan (H): drag to move the viewport.'
     };
 
@@ -3012,7 +3412,13 @@
         b.classList.toggle('cursor-not-allowed', !enabled);
       };
       setEnabled('btnGroup', !!a && a.type === 'activeSelection');
-      setEnabled('btnUngroup', !!a && a.type === 'group' && !a.locked);
+      const isGroup = !!a && a.type === 'group' && !a.locked;
+      setEnabled('btnUngroup', isGroup);
+      const bUngroup = document.getElementById('btnUngroup');
+      if (bUngroup) {
+        const highlightClasses = ['bg-amber-500/25', 'text-amber-300', 'border-amber-400', 'font-bold', 'ring-2', 'ring-amber-400/60'];
+        highlightClasses.forEach(cls => bUngroup.classList.toggle(cls, isGroup));
+      }
     }
 
     // --- Layer ordering (works on single objects and multi-selections) ---
@@ -3089,6 +3495,9 @@
     function setTool(tool, opts) {
       opts = opts || {};
       if (!TOOL_BUTTONS[tool]) return;
+      if (currentTool === 'eraser' && tool !== 'eraser') {
+        clearEraserHover();
+      }
       if (lasso.active) cancelLasso(true);
       currentTool = tool;
       refreshPanMode();                             // enter / leave the persistent Pan tool
@@ -3105,6 +3514,9 @@
       } else if (tool === 'eraser') {
         fCanvas.selection = false;                  // no marquee while erasing
         fCanvas.discardActiveObject();
+        fCanvas.getObjects().forEach(o => {
+          if (o.type === 'group') o.subTargetCheck = true;
+        });
         fCanvas.requestRenderAll();
         applyToolCursors('crosshair', 'crosshair', 'crosshair', false);
       } else if (tool === 'pan') {
@@ -3117,44 +3529,66 @@
       if (!opts.silent) document.getElementById('statusText').innerText = TOOL_LABELS[tool];
     }
 
-    // --- Magic Canvas Cleanup Eraser (E) --------------------------------
-    fCanvas.on('before:transform', (opt) => {
-      if (currentTool === 'eraser') {
-        opt.e?.preventDefault?.();
-        fCanvas.discardActiveObject();
-      }
-    });
+    // --- Magic Canvas Cleanup Eraser (E) with Hover Target Preview ------
+    let eraserHover = null; // { target, parentGroup, origStroke, origStrokeWidth, origStrokeUniform }
 
-    fCanvas.on('mouse:down', (opt) => {
-      if (currentTool !== 'eraser' || (opt.e && opt.e.button !== 0) || spacePanActive) return;
-      if (opt.e) {
-        opt.e.preventDefault();
-        opt.e.stopPropagation();
+    function clearEraserHover() {
+      if (!eraserHover) return;
+      try {
+        if (eraserHover.target) {
+          eraserHover.target.set({
+            stroke: eraserHover.origStroke,
+            strokeWidth: eraserHover.origStrokeWidth,
+            strokeUniform: eraserHover.origStrokeUniform
+          });
+          if (eraserHover.parentGroup) {
+            eraserHover.parentGroup.dirty = true;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to restore eraser hover stroke:", e);
       }
+      eraserHover = null;
+      fCanvas.requestRenderAll();
+    }
 
+    function findEraserTarget(opt) {
+      if (!opt) return { subTarget: null, parentGroup: null };
       let subTarget = null;
       let parentGroup = null;
 
-      // 1. Check if Fabric subTargetCheck identified an inner group child
+      // 1. Direct Fabric subTargets if subTargetCheck was true on hover
       if (opt.subTargets && opt.subTargets.length > 0) {
         subTarget = opt.subTargets[opt.subTargets.length - 1];
         parentGroup = opt.target;
       } else if (opt.target && opt.target.type === 'group') {
         parentGroup = opt.target;
-        const ptr = fCanvas.getPointer(opt.e);
-        const inv = fabric.util.invertTransform(parentGroup.calcTransformMatrix());
-        const localPt = fabric.util.transformPoint(new fabric.Point(ptr.x, ptr.y), inv);
-        const kids = parentGroup.getObjects().slice().reverse();
-        for (const k of kids) {
-          if (k.containsPoint && k.containsPoint(localPt)) {
-            subTarget = k;
-            break;
+        if (opt.e) {
+          const ptr = fCanvas.getPointer(opt.e);
+          const inv = fabric.util.invertTransform(parentGroup.calcTransformMatrix());
+          const localPt = fabric.util.transformPoint(new fabric.Point(ptr.x, ptr.y), inv);
+          const kids = parentGroup.getObjects().slice().reverse();
+          for (const k of kids) {
+            if (k.containsPoint && k.containsPoint(localPt)) {
+              subTarget = k;
+              break;
+            }
+          }
+          if (!subTarget) {
+            for (const k of kids) {
+              const b = k.getBoundingRect ? k.getBoundingRect(true, true) : null;
+              if (b && localPt.x >= b.left && localPt.x <= b.left + b.width &&
+                       localPt.y >= b.top && localPt.y <= b.top + b.height) {
+                subTarget = k;
+                break;
+              }
+            }
           }
         }
       } else if (opt.target) {
         subTarget = opt.target;
         parentGroup = null;
-      } else {
+      } else if (opt.e) {
         const prevPP = fCanvas.perPixelTargetFind;
         fCanvas.perPixelTargetFind = true;
         const found = fCanvas.findTarget(opt.e, true);
@@ -3172,27 +3606,126 @@
                 break;
               }
             }
+            if (!subTarget && kids.length > 0) {
+              for (const k of kids) {
+                const b = k.getBoundingRect ? k.getBoundingRect(true, true) : null;
+                if (b && localPt.x >= b.left && localPt.x <= b.left + b.width &&
+                         localPt.y >= b.top && localPt.y <= b.top + b.height) {
+                  subTarget = k;
+                  break;
+                }
+              }
+            }
           } else {
             subTarget = found;
           }
         }
       }
 
+      if (subTarget && subTarget.locked) return { subTarget: null, parentGroup: null };
+      if (parentGroup && parentGroup.locked) return { subTarget: null, parentGroup: null };
+
+      return { subTarget, parentGroup };
+    }
+
+    fCanvas.on('before:transform', (opt) => {
+      if (currentTool === 'eraser') {
+        opt.e?.preventDefault?.();
+        fCanvas.discardActiveObject();
+      }
+    });
+
+    fCanvas.on('mouse:move', (opt) => {
+      if (currentTool !== 'eraser' || spacePanActive) return;
+
+      const { subTarget, parentGroup } = findEraserTarget(opt);
+
+      // If already hovering the same subTarget, nothing to do
+      if (eraserHover && eraserHover.target === subTarget) return;
+
+      // Otherwise, clear previous hover highlight
+      if (eraserHover) {
+        clearEraserHover();
+      }
+
+      // If valid subTarget found, highlight with bright red stroke
       if (subTarget) {
+        eraserHover = {
+          target: subTarget,
+          parentGroup: parentGroup,
+          origStroke: subTarget.stroke,
+          origStrokeWidth: subTarget.strokeWidth,
+          origStrokeUniform: subTarget.strokeUniform
+        };
+        subTarget.set({
+          stroke: '#ff0000',
+          strokeWidth: 2,
+          strokeUniform: true
+        });
+        if (parentGroup) parentGroup.dirty = true;
+        fCanvas.requestRenderAll();
+
+        const name = subTarget.name || subTarget.type || 'vector path';
+        document.getElementById('statusText').innerText = `Eraser: click to delete "${name}"`;
+      } else {
+        document.getElementById('statusText').innerText = 'Eraser (E): hover over vector paths to target';
+      }
+    });
+
+    fCanvas.on('mouse:out', () => {
+      if (currentTool === 'eraser') {
+        clearEraserHover();
+      }
+    });
+
+    fCanvas.upperCanvasEl.addEventListener('mouseleave', () => {
+      if (currentTool === 'eraser') {
+        clearEraserHover();
+      }
+    });
+
+    fCanvas.on('mouse:down', (opt) => {
+      if (currentTool !== 'eraser' || (opt.e && opt.e.button !== 0) || spacePanActive) return;
+      if (opt.e) {
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      }
+
+      let toDelete = null;
+      let parentGroup = null;
+
+      if (eraserHover && eraserHover.target) {
+        toDelete = eraserHover.target;
+        parentGroup = eraserHover.parentGroup;
+        // CRITICAL: Cleanly restore original properties before removing so history / memory is pristine
+        eraserHover.target.set({
+          stroke: eraserHover.origStroke,
+          strokeWidth: eraserHover.origStrokeWidth,
+          strokeUniform: eraserHover.origStrokeUniform
+        });
+        eraserHover = null;
+      } else {
+        const res = findEraserTarget(opt);
+        toDelete = res.subTarget;
+        parentGroup = res.parentGroup;
+      }
+
+      if (toDelete && !toDelete.locked && (!parentGroup || !parentGroup.locked)) {
+        const targetName = toDelete.name || toDelete.type || 'vector path';
         if (parentGroup) {
-          parentGroup.removeWithUpdate(subTarget);
+          parentGroup.removeWithUpdate(toDelete);
           parentGroup.setCoords();
           if (parentGroup.size() === 0) {
             fCanvas.remove(parentGroup);
           }
         } else {
-          fCanvas.remove(subTarget);
+          fCanvas.remove(toDelete);
         }
         fCanvas.discardActiveObject();
         fCanvas.requestRenderAll();
         saveCanvasState();
         updateLayersUI();
-        document.getElementById('statusText').innerText = `Erased "${subTarget.name || subTarget.type || 'vector path'}"!`;
+        document.getElementById('statusText').innerText = `Erased "${targetName}"!`;
       }
     });
 
@@ -3300,7 +3833,10 @@
     window.addEventListener('mouseup', (e) => {
       if (lasso.active && e.button === 0) finishLasso();
     });
-    window.addEventListener('blur', () => cancelLasso());
+    window.addEventListener('blur', () => {
+      cancelLasso();
+      if (typeof clearEraserHover === 'function') clearEraserHover();
+    });
 
     // --- Keyboard dispatcher (called from the global keydown listener) ---
     function handleCanvasShortcut(e) {
@@ -3335,6 +3871,7 @@
       if (key === 'l') { e.preventDefault(); setTool('lasso'); return true; }
       if (key === 'e') { e.preventDefault(); setTool('eraser'); return true; }
       if (key === 'h') { e.preventDefault(); setTool('pan'); return true; }
+      if (key === 't') { e.preventDefault(); document.getElementById('btnToolText')?.click(); return true; }
       return false;
     }
 

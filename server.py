@@ -502,6 +502,9 @@ def vectorize_advanced(data_url, k_colors=6, detail="balanced", snap_palette=Non
                     except ValueError:
                         pass
 
+    total_image_area = max(1, arr.shape[0] * arr.shape[1])
+    min_cluster_pixels = max(1, int(0.005 * total_image_area))  # 0.5% of total image area
+
     if len(opaque_pixels) > 0:
         if len(valid_palette) > 0:
             # Hard-snapped palette: bypass K-Means entirely
@@ -509,41 +512,90 @@ def vectorize_advanced(data_url, k_colors=6, detail="balanced", snap_palette=Non
             # Euclidean distance to palette colors: (N, 1, 3) - (1, P, 3)
             diff = opaque_pixels[:, None, :] - palette_arr[None, :, :]
             dists = np.sum(diff ** 2, axis=2)
-            nearest_idx = np.argmin(dists, axis=1)
-            quantized_opaque = palette_arr[nearest_idx].astype(np.uint8)
-            num_colors = max(2, len(valid_palette))
+            labels = np.argmin(dists, axis=1)
+
+            # Post-quantization micro-cluster filter (< 0.5% total area)
+            num_p = len(palette_arr)
+            counts = np.bincount(labels, minlength=num_p)
+            dominant_indices = [i for i in range(num_p) if counts[i] >= min_cluster_pixels]
+            if dominant_indices and len(dominant_indices) < num_p:
+                dominant_palette = palette_arr[dominant_indices]
+                for disc_idx in range(num_p):
+                    if disc_idx not in dominant_indices:
+                        disc_mask = (labels == disc_idx)
+                        if disc_mask.any():
+                            dists_p = np.sum((dominant_palette - palette_arr[disc_idx]) ** 2, axis=1)
+                            labels[disc_mask] = dominant_indices[np.argmin(dists_p)]
+
+            quantized_opaque = palette_arr[labels].astype(np.uint8)
+            num_colors = max(2, len(dominant_indices) if dominant_indices else num_p)
         else:
             # K-Means clustering with n_clusters = k_colors
+            # STRICT FILTER: Only include solid core pixels with alpha > 245
+            # Prevents soft edge halos and transparent fringes from creating muddy gray/brown layers
+            core_mask = (alpha > 245) & mask
+            if np.sum(core_mask) < 200:
+                core_mask = mask
+            core_pixels = smoothed_np[core_mask].astype(np.float32)
+
             k = max(2, min(32, int(k_colors or 6)))
-            unique_pixels = np.unique(opaque_pixels, axis=0)
+            unique_pixels = np.unique(core_pixels, axis=0)
             actual_k = max(1, min(k, len(unique_pixels)))
 
-            if len(opaque_pixels) > 30000:
-                sample_idx = np.random.choice(len(opaque_pixels), 30000, replace=False)
-                sample = opaque_pixels[sample_idx]
+            if len(core_pixels) > 30000:
+                sample_idx = np.random.choice(len(core_pixels), 30000, replace=False)
+                sample = core_pixels[sample_idx]
             else:
-                sample = opaque_pixels
+                sample = core_pixels
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 centroids, _ = vq.kmeans2(sample, actual_k, minit="points", iter=15)
-                labels, _ = vq.vq(opaque_pixels, centroids)
 
-            # Perceptual saturation weighting
-            max_c = np.max(opaque_pixels, axis=1)
-            min_c = np.min(opaque_pixels, axis=1)
-            sat = np.where(max_c > 0, (max_c - min_c) / np.maximum(max_c, 1e-5), 0.0)
-            val = max_c / 255.0
-            w = ((sat + 0.05) ** 2) * (val + 0.05)
-
+            # True Peak Color Fidelity:
+            # Map each cluster back to the original image and extract the most frequent
+            # exact original RGB pixel, preventing washed-out mathematical averages and
+            # preserving vivid, authentic hex codes.
+            orig_core_pixels = raw_rgb[core_mask].astype(np.uint8)
+            core_labels, _ = vq.vq(core_pixels, centroids)
             for ki in range(actual_k):
-                m = (labels == ki)
+                m = (core_labels == ki)
                 if m.any():
-                    w_sum = np.sum(w[m])
-                    centroids[ki] = np.sum(opaque_pixels[m] * w[m, None], axis=0) / w_sum if w_sum > 0 else np.mean(opaque_pixels[m], axis=0)
+                    pix_cluster = orig_core_pixels[m]
+                    packed = (pix_cluster[:, 0].astype(np.uint32) << 16) | \
+                             (pix_cluster[:, 1].astype(np.uint32) << 8) | \
+                             pix_cluster[:, 2].astype(np.uint32)
+                    unique_vals, counts = np.unique(packed, return_counts=True)
+                    best_val = unique_vals[np.argmax(counts)]
+                    centroids[ki] = np.array([
+                        float((best_val >> 16) & 0xFF),
+                        float((best_val >> 8) & 0xFF),
+                        float(best_val & 0xFF)
+                    ], dtype=np.float32)
+
+            # Quantize all foreground pixels in mask against clean core centroids
+            labels, _ = vq.vq(opaque_pixels, centroids)
+
+            # Post-quantization micro-cluster filter (< 0.5% total area)
+            # Discard minor fringe clusters and merge them to the next nearest dominant color
+            counts = np.bincount(labels, minlength=actual_k)
+            dominant_indices = [i for i in range(actual_k) if counts[i] >= min_cluster_pixels]
+            if not dominant_indices:
+                dominant_indices = np.argsort(-counts)[:max(1, min(2, actual_k))].tolist()
+
+            discarded_indices = [i for i in range(actual_k) if i not in dominant_indices]
+            if discarded_indices and len(dominant_indices) > 0:
+                dominant_centroids = centroids[dominant_indices]
+                for disc_idx in discarded_indices:
+                    disc_mask = (labels == disc_idx)
+                    if not disc_mask.any():
+                        continue
+                    dists = np.sum((dominant_centroids - centroids[disc_idx]) ** 2, axis=1)
+                    nearest_dom_idx = dominant_indices[np.argmin(dists)]
+                    labels[disc_mask] = nearest_dom_idx
 
             quantized_opaque = centroids[labels].clip(0, 255).astype(np.uint8)
-            num_colors = actual_k
+            num_colors = max(2, len(dominant_indices) if dominant_indices else actual_k)
 
         out_rgb = smoothed_np.copy()
         out_rgb[mask] = quantized_opaque
