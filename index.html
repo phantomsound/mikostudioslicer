@@ -26,22 +26,222 @@
 </head>
 <body class="bg-[#121316] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-black">
 
-  <!-- HEADER -->
-  <header class="border-b border-[#24252f] bg-[#18191f]/90 backdrop-blur px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
+  <!-- HEADER & APPLICATION MENU BAR -->
+  <header class="border-b border-[#24252f] bg-[#16171d]/95 backdrop-blur px-4 py-2 flex flex-wrap items-center justify-between sticky top-0 z-40 select-none shadow-sm gap-2">
+    <!-- Brand + Desktop Menu Bar -->
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-base">
-        M
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-sm font-semibold tracking-wide text-slate-100">Miko Studio Slicer</h1>
-          <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">Production Suite</span>
+      <div class="flex items-center gap-2 pr-3 border-r border-[#272936]">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-sm shadow-sm">
+          M
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5 leading-none">
+            <span class="text-xs font-bold tracking-wide text-slate-100">Miko Studio</span>
+            <span class="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">Slicer v1.2</span>
+          </div>
         </div>
       </div>
+
+      <!-- DESKTOP MENU BAR: File | Edit | View | Tools | Help -->
+      <nav id="topMenuBar" class="flex items-center gap-0.5 text-xs font-medium text-slate-300">
+        <!-- File Menu -->
+        <div class="relative menu-dropdown">
+          <button type="button" class="menu-btn px-2.5 py-1 rounded hover:bg-[#252835] hover:text-white transition flex items-center gap-1">
+            File <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+          </button>
+          <div class="menu-content hidden absolute left-0 mt-1 w-56 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-2xl z-50 py-1 text-xs">
+            <button type="button" onclick="document.getElementById('fileInput').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i> Upload Image...</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+I</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('projectInput').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i> Open Project...</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+O</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnSaveProject').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="save" class="w-3.5 h-3.5 text-amber-400"></i> Save Project</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+S</kbd>
+            </button>
+            <button type="button" onclick="openCloudShareModal()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-pink-300 flex items-center justify-between text-pink-400 font-medium">
+              <span class="flex items-center gap-2"><i data-lucide="cloud" class="w-3.5 h-3.5"></i> Cloud Drives & Share...</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Share</kbd>
+            </button>
+            <div class="h-px bg-slate-800 my-1"></div>
+            <button type="button" onclick="document.getElementById('btnExportPSD').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="file-output" class="w-3.5 h-3.5 text-amber-400"></i> Export Master .PSD</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+E</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnExportSVG').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="bezier" class="w-3.5 h-3.5 text-indigo-400"></i> Export Vector .SVG</span>
+            </button>
+            <button type="button" onclick="document.getElementById('btnExportZIP').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="archive" class="w-3.5 h-3.5 text-emerald-400"></i> Export PNG Slices (.ZIP)</span>
+            </button>
+            <button type="button" onclick="document.getElementById('btnExport1080pPNG').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="tv" class="w-3.5 h-3.5 text-amber-400"></i> Download 1080p PNG</span>
+            </button>
+            <button type="button" onclick="document.getElementById('btnExportOBSHtml').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="code" class="w-3.5 h-3.5 text-sky-400"></i> Export OBS HTML Overlay</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Edit Menu -->
+        <div class="relative menu-dropdown">
+          <button type="button" class="menu-btn px-2.5 py-1 rounded hover:bg-[#252835] hover:text-white transition flex items-center gap-1">
+            Edit <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+          </button>
+          <div class="menu-content hidden absolute left-0 mt-1 w-52 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-2xl z-50 py-1 text-xs">
+            <button type="button" onclick="document.getElementById('btnUndo').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i> Undo</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+Z</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnRedo').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="redo-2" class="w-3.5 h-3.5"></i> Redo</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+Y</kbd>
+            </button>
+            <div class="h-px bg-slate-800 my-1"></div>
+            <button type="button" onclick="copyActive()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+C</kbd>
+            </button>
+            <button type="button" onclick="pasteActive()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="clipboard" class="w-3.5 h-3.5"></i> Paste</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+V</kbd>
+            </button>
+            <button type="button" onclick="deleteActive()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-red-400 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Selected</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Del</kbd>
+            </button>
+            <button type="button" onclick="selectAllObjects()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="check-square" class="w-3.5 h-3.5"></i> Select All</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+A</kbd>
+            </button>
+            <div class="h-px bg-slate-800 my-1"></div>
+            <button type="button" onclick="document.getElementById('btnGroup').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="layers" class="w-3.5 h-3.5"></i> Group Selected</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+G</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnUngroup').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="ungroup" class="w-3.5 h-3.5"></i> Ungroup</span>
+              <kbd class="text-[10px] font-mono text-slate-500">Ctrl+Shift+G</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnGroupByColor').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Group by Color</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- View Menu -->
+        <div class="relative menu-dropdown">
+          <button type="button" class="menu-btn px-2.5 py-1 rounded hover:bg-[#252835] hover:text-white transition flex items-center gap-1">
+            View <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+          </button>
+          <div class="menu-content hidden absolute left-0 mt-1 w-56 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-2xl z-50 py-1 text-xs">
+            <button type="button" onclick="switchTab('deconstruct')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> 1. Pull & Deconstruct</span>
+              <kbd class="text-[10px] font-mono text-slate-500">1</kbd>
+            </button>
+            <button type="button" onclick="switchTab('canvas')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="layers" class="w-3.5 h-3.5"></i> 2. Photoshop Canvas</span>
+              <kbd class="text-[10px] font-mono text-slate-500">2</kbd>
+            </button>
+            <button type="button" onclick="switchTab('lowerthird')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="tv" class="w-3.5 h-3.5"></i> 3. Lower Third Studio</span>
+              <kbd class="text-[10px] font-mono text-slate-500">3</kbd>
+            </button>
+            <div class="h-px bg-slate-800 my-1"></div>
+            <button type="button" onclick="document.getElementById('btnFitScreen').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="maximize" class="w-3.5 h-3.5"></i> Fit Artwork to Screen</span>
+              <kbd class="text-[10px] font-mono text-slate-500">F</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnZoomReset').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reset Viewport 1:1</span>
+              <kbd class="text-[10px] font-mono text-slate-500">0</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tools Menu -->
+        <div class="relative menu-dropdown">
+          <button type="button" class="menu-btn px-2.5 py-1 rounded hover:bg-[#252835] hover:text-white transition flex items-center gap-1">
+            Tools <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+          </button>
+          <div class="menu-content hidden absolute left-0 mt-1 w-60 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-2xl z-50 py-1 text-xs">
+            <button type="button" onclick="setTool('select')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="mouse-pointer" class="w-3.5 h-3.5"></i> Select Tool</span>
+              <kbd class="text-[10px] font-mono text-slate-500">V</kbd>
+            </button>
+            <button type="button" onclick="setTool('lasso')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="lasso" class="w-3.5 h-3.5"></i> Lasso Tool</span>
+              <kbd class="text-[10px] font-mono text-slate-500">L</kbd>
+            </button>
+            <button type="button" onclick="setTool('eraser')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="eraser" class="w-3.5 h-3.5 text-red-400"></i> Precision Eraser</span>
+              <kbd class="text-[10px] font-mono text-slate-500">E</kbd>
+            </button>
+            <button type="button" onclick="setTool('pan')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="hand" class="w-3.5 h-3.5"></i> Pan Tool</span>
+              <kbd class="text-[10px] font-mono text-slate-500">H</kbd>
+            </button>
+            <button type="button" onclick="setTool('bucket')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="paint-bucket" class="w-3.5 h-3.5 text-amber-400"></i> Paint Bucket Tool</span>
+              <kbd class="text-[10px] font-mono text-slate-500">K</kbd>
+            </button>
+            <button type="button" onclick="toggleDrawBrush()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="pen-tool" class="w-3.5 h-3.5 text-indigo-400"></i> Freehand Draw Brush</span>
+              <kbd class="text-[10px] font-mono text-slate-500">B</kbd>
+            </button>
+            <button type="button" onclick="document.getElementById('btnToolText').click()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="type" class="w-3.5 h-3.5 text-sky-400"></i> Add Text Layer</span>
+              <kbd class="text-[10px] font-mono text-slate-500">T</kbd>
+            </button>
+            <button type="button" onclick="activateEyedropper()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="pipette" class="w-3.5 h-3.5 text-amber-400"></i> Eyedropper Sampler</span>
+              <kbd class="text-[10px] font-mono text-slate-500">I</kbd>
+            </button>
+            <button type="button" onclick="triggerExtractRegion()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-pink-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="crop" class="w-3.5 h-3.5 text-pink-400"></i> AI Region Extraction</span>
+              <kbd class="text-[10px] font-mono text-slate-500">X</kbd>
+            </button>
+            <button type="button" onclick="activateColorVisualizer()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i> Behr Color Visualizer</span>
+              <kbd class="text-[10px] font-mono text-slate-500">C</kbd>
+            </button>
+          </div>
+        </div>
+
+        <!-- Help Menu -->
+        <div class="relative menu-dropdown">
+          <button type="button" class="menu-btn px-2.5 py-1 rounded hover:bg-[#252835] hover:text-white transition flex items-center gap-1">
+            Help <i data-lucide="chevron-down" class="w-3 h-3 text-slate-500"></i>
+          </button>
+          <div class="menu-content hidden absolute left-0 mt-1 w-64 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-2xl z-50 py-1 text-xs">
+            <button type="button" onclick="openHelpModal('workflow')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i> How-To Guides & Workflow</span>
+            </button>
+            <button type="button" onclick="openShortcutsModal()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-amber-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="keyboard" class="w-3.5 h-3.5 text-sky-400"></i> Keyboard Shortcuts Reference</span>
+              <kbd class="text-[10px] font-mono text-slate-500">?</kbd>
+            </button>
+            <button type="button" onclick="openHelpModal('cloud')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-pink-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="cloud" class="w-3.5 h-3.5 text-pink-400"></i> Cloud Drive & Sharing Guide</span>
+            </button>
+            <button type="button" onclick="openHelpModal('visualizer')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] hover:text-emerald-300 flex items-center justify-between">
+              <span class="flex items-center gap-2"><i data-lucide="palette" class="w-3.5 h-3.5 text-emerald-400"></i> Behr Color Visualizer Guide</span>
+            </button>
+            <div class="h-px bg-slate-800 my-1"></div>
+            <div class="px-3 py-1 text-[10px] text-slate-400 flex items-center justify-between">
+              <span>Miko Studio Slicer</span>
+              <span class="font-mono text-amber-400">v1.2.0</span>
+            </div>
+          </div>
+        </div>
+      </nav>
     </div>
 
     <!-- TABS -->
-    <div class="flex items-center bg-[#1e2027] border border-[#2b2d37] p-1 rounded-xl text-xs font-medium">
+    <div class="flex items-center bg-[#1e2027] border border-[#2b2d37] p-1 rounded-xl text-xs font-medium shadow-inner">
       <button id="tabDeconstruct" class="px-3.5 py-1.5 rounded-lg bg-amber-500/15 text-amber-300 font-semibold transition flex items-center gap-1.5">
         <i data-lucide="scissors" class="w-3.5 h-3.5"></i> 1. Pull & Deconstruct
       </button>
@@ -55,23 +255,32 @@
 
     <!-- ACTIONS -->
     <div class="flex items-center gap-2">
-      <!-- Project Save & Load -->
-      <button id="btnSaveProject" class="bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5" title="Save .mikoproj project file">
-        <i data-lucide="save" class="w-3.5 h-3.5 text-amber-400"></i> Save Project
+      <!-- Quick Cloud Share & Save -->
+      <button id="btnQuickShare" class="bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5" title="Cloud Drives & Direct Share">
+        <i data-lucide="share-2" class="w-3.5 h-3.5 text-pink-400"></i> <span class="hidden md:inline">Cloud Share</span>
       </button>
-      <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5" title="Open .mikoproj project file">
-        <i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i> Open Project
+
+      <!-- Project Save & Load -->
+      <button id="btnSaveProject" class="bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5" title="Save .mikoproj (Ctrl+S)">
+        <i data-lucide="save" class="w-3.5 h-3.5 text-amber-400"></i> <span class="hidden md:inline">Save Project</span>
+      </button>
+      <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5" title="Open .mikoproj project file (Ctrl+O)">
+        <i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i> <span class="hidden md:inline">Open Project</span>
         <input type="file" id="projectInput" accept=".mikoproj,.json" class="hidden">
       </label>
-      <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5">
-        <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i> Upload Image
+      <label class="cursor-pointer bg-[#20222a] hover:bg-[#282a35] text-xs font-medium text-slate-200 px-3 py-1.5 rounded-lg border border-[#2e313d] transition flex items-center gap-1.5" title="Upload Image to Slicer">
+        <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i> <span class="hidden md:inline">Upload Image</span>
         <input type="file" id="fileInput" accept="image/*" class="hidden">
       </label>
-      <button id="btnExportPSD" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
-        <i data-lucide="file-output" class="w-3.5 h-3.5"></i> Export .PSD
+      <button id="btnExportPSD" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5" title="Export Multi-Layer PSD (Ctrl+E)">
+        <i data-lucide="file-output" class="w-3.5 h-3.5"></i> <span>Export .PSD</span>
+      </button>
+      <button id="btnHeaderHelp" class="p-1.5 rounded-lg bg-[#20222a] hover:bg-[#282a35] text-slate-400 hover:text-amber-400 border border-[#2e313d] transition" title="Help & Shortcuts (?)">
+        <i data-lucide="help-circle" class="w-4 h-4"></i>
       </button>
     </div>
   </header>
+
 
   <!-- MAIN APP -->
   <main class="flex-1 flex overflow-hidden">
@@ -125,7 +334,7 @@
         </div>
 
         <div id="toolbarCanvas" class="flex flex-wrap gap-y-1.5 items-center gap-2 hidden">
-          <!-- Tools: Select, Lasso, Eraser, Pan -->
+          <!-- Tools: Select, Lasso, Eraser, Pan, Bucket -->
           <div id="toolModeBar" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium shadow-sm" title="Tools">
             <button id="btnToolSelect" data-tool="select" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 transition" title="Select (V) - click, Shift+click or drag a marquee box to select">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg> <span>Select</span>
@@ -139,6 +348,9 @@
             <button id="btnToolPan" data-tool="pan" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Pan viewport (H) - or hold Space and drag">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg> <span>Pan</span>
             </button>
+            <button id="btnToolBucket" data-tool="bucket" class="px-2.5 py-1 flex items-center gap-1 text-slate-400 hover:text-slate-200 border-l border-[#2c2f3d] transition" title="Paint Bucket (K) - click any object to flood fill with active fill color">
+              <i data-lucide="paint-bucket" class="w-3.5 h-3.5 text-amber-400"></i> <span>Bucket</span>
+            </button>
           </div>
 
           <!-- Divider -->
@@ -151,12 +363,18 @@
               <i data-lucide="type" class="w-3.5 h-3.5 text-sky-400"></i> <span>Text (T)</span>
             </button>
 
-            <!-- Shape Dropdown -->
+            <!-- Add Shape -->
+            <button id="btnAddShape" class="px-2.5 py-1 text-slate-300 hover:text-white border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Add Shape - 150x150 Rect, 8px radius">
+              <i data-lucide="square" class="w-3.5 h-3.5 text-blue-400"></i> <span>Add Shape</span>
+            </button>
+
+            <!-- Shape Dropdown Menu -->
             <div class="relative inline-block text-left border-l border-[#2c2f3d]">
-              <button id="btnShapeMenu" class="px-2.5 py-1 text-slate-300 hover:text-white flex items-center gap-1 transition" title="Add parametric shapes">
-                <i data-lucide="shapes" class="w-3.5 h-3.5 text-amber-400"></i> <span>Shape</span> <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+              <button id="btnShapeMenu" class="px-1.5 py-1 text-slate-400 hover:text-white flex items-center transition" title="More shapes...">
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
               </button>
-              <div id="shapeDropdown" class="hidden absolute left-0 mt-1 w-36 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-xl z-50 py-1 text-xs">
+              <div id="shapeDropdown" class="hidden absolute left-0 mt-1 w-40 bg-[#1a1c24] border border-[#2b2d39] rounded-lg shadow-xl z-50 py-1 text-xs">
+                <button onclick="addDefaultShape()" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-blue-400 font-semibold">Standard Box (150x150)</button>
                 <button onclick="addParametricShape('rect')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Rectangle</button>
                 <button onclick="addParametricShape('rounded')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Rounded Box</button>
                 <button onclick="addParametricShape('circle')" class="w-full text-left px-3 py-1.5 hover:bg-[#252835] text-slate-200">Circle</button>
@@ -168,7 +386,7 @@
 
             <!-- Draw Brush Toggle -->
             <button id="btnToggleDraw" class="px-2.5 py-1 text-slate-300 hover:text-white border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Toggle Freehand Drawing Brush">
-              <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-indigo-400"></i> <span>Brush</span>
+              <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-indigo-400"></i> <span>Draw Brush</span>
             </button>
           </div>
 
@@ -185,21 +403,25 @@
           <!-- Divider -->
           <div class="h-4 w-px bg-slate-700/80 mx-0.5"></div>
 
-          <!-- Utilities: Group by Color, Punch Out, Undo, Redo, Eyedropper -->
+          <!-- Utilities: Group by Color, Extract Region (X), Undo, Redo, Eyedropper, Color Visualizer -->
           <div id="toolbarGroupUtil" class="flex items-center rounded-md border border-[#2c2f3d] bg-[#14151a] overflow-hidden text-[11px] font-medium shadow-sm" title="Utilities">
             <button id="btnGroupByColor" class="px-2 py-1 text-amber-300 hover:text-white transition flex items-center gap-1" title="Merge paths sharing identical fill colors into compound color family groups">
               <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> <span class="hidden md:inline">Group by Color</span>
             </button>
-            <button id="btnPunchOut" class="px-2 py-1 text-slate-300 hover:text-amber-400 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Cut hole through artwork using active shape (destination-out)">
-              <i data-lucide="scissors" class="w-3.5 h-3.5 text-red-400"></i> <span class="hidden md:inline">Punch Out</span>
+            <button id="btnExtractRegion" class="px-2.5 py-1 text-slate-300 hover:text-pink-400 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Extract Region (X) - Marquee drag over photo to isolate with AI cutout">
+              <i data-lucide="crop" class="w-3.5 h-3.5 text-pink-400"></i> <span class="hidden md:inline">Extract Region (X)</span>
             </button>
             <button id="btnUndo" class="px-2 py-1 text-slate-300 hover:text-white hover:bg-slate-800/50 border-l border-[#2c2f3d] transition flex items-center gap-1" title="Undo (Ctrl+Z)"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i></button>
             <button id="btnRedo" class="px-2 py-1 text-slate-300 hover:text-white hover:bg-slate-800/50 border-l border-[#2c2f3d] transition flex items-center gap-1" title="Redo (Ctrl+Y)"><i data-lucide="redo-2" class="w-3.5 h-3.5"></i></button>
-            <button class="btn-eyedropper px-2 py-1 text-slate-300 hover:text-amber-400 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Eyedropper (I) - sample a colour into the active object's Fill">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+            <button id="btnEyedropper" class="btn-eyedropper px-2 py-1 text-slate-300 hover:text-amber-400 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Eyedropper (I) - sample a colour into the active object's Fill & Brand Swatches">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg> <span class="hidden md:inline">Eyedropper</span>
+            </button>
+            <button id="btnVisualizerQuick" onclick="activateColorVisualizer()" class="px-2 py-1 text-slate-300 hover:text-amber-300 border-l border-[#2c2f3d] flex items-center gap-1 transition" title="Color Visualizer (C) - Behr Style Live Palette Slider & Recolor">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i> <span class="hidden md:inline">Visualizer (C)</span>
             </button>
           </div>
         </div>
+
 
         <div id="toolbarLowerThird" class="flex items-center gap-2 hidden">
           <span class="text-slate-400 text-[11px]">Layout:</span>
@@ -503,7 +725,66 @@
                   <span id="strokeWidthVal" class="font-mono text-[11px] text-slate-400 w-6">0</span>
                 </div>
               </div>
+
+              <!-- Behr / Home Depot Color Visualizer Panel -->
+              <div id="panelBehrVisualizer" class="pt-2.5 border-t border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i> Color Visualizer
+                  </span>
+                  <span class="text-[9px] bg-amber-500/15 text-amber-300 border border-amber-500/25 px-1.5 py-0.5 rounded font-mono">Behr Style</span>
+                </div>
+                
+                <!-- Hue Slider -->
+                <div>
+                  <div class="flex items-center justify-between mb-1 text-[10px]">
+                    <span class="text-slate-300 font-medium">Palette Hue Shift:</span>
+                    <span id="valBehrHue" class="font-mono text-amber-400 font-bold bg-black/40 px-1.5 py-0.5 rounded border border-slate-800">0°</span>
+                  </div>
+                  <input type="range" id="sliderBehrHue" min="0" max="360" value="0" class="w-full h-2 rounded-lg cursor-pointer" style="background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);">
+                </div>
+
+                <!-- Theme Selector & Cycle Button -->
+                <div>
+                  <div class="flex items-center justify-between mb-1 text-[10px]">
+                    <span class="text-slate-300 font-medium">Designer Theme:</span>
+                    <button type="button" id="btnCycleBehrColor" class="text-[10px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition">
+                      <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Cycle Colors (C)
+                    </button>
+                  </div>
+                  <select id="selBehrPalette" class="w-full bg-[#1c1d24] border border-slate-700 px-2 py-1 rounded text-[11px] text-white focus:border-amber-400">
+                    <option value="modern_neutrals">Behr Architectural Neutrals</option>
+                    <option value="coastal_breeze">Modern Coastal & Navy</option>
+                    <option value="warm_terracotta">Warm Terracotta & Clay</option>
+                    <option value="midcentury_slate">Mid-Century Modern Slate</option>
+                    <option value="nordic_forest">Nordic Pine & Sage</option>
+                    <option value="cyber_neon">Vibrant Studio Accents</option>
+                  </select>
+                </div>
+
+                <!-- Palette Swatches Strip -->
+                <div id="behrSwatchStrip" class="flex flex-wrap items-center gap-1.5 pt-1">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+
+              <!-- Studio Highlight & Neon Glow -->
+              <div class="pt-2 border-t border-slate-800 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-slate-300 text-[11px] font-medium flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" id="chkHighlightGlow" class="rounded border-slate-700 text-amber-500 focus:ring-0 bg-[#1c1d24]">
+                    <span>Studio Highlight Glow</span>
+                  </label>
+                  <input type="color" id="propGlowColor" value="#38bdf8" class="w-5 h-5 rounded border border-slate-700 bg-transparent cursor-pointer">
+                </div>
+                <div id="sectionGlowControls" class="hidden flex items-center gap-2 pl-4 text-[10px]">
+                  <span class="text-slate-400">Glow Radius:</span>
+                  <input type="range" id="propGlowBlur" min="0" max="50" value="20" class="flex-1 accent-amber-500">
+                  <span id="glowBlurVal" class="font-mono text-slate-300 w-8">20px</span>
+                </div>
+              </div>
             </div>
+
 
             <!-- Layer Ordering -->
             <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1 text-[11px]">
@@ -624,6 +905,320 @@
       </div>
     </div>
   </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODALS: HELP WALKTHROUGH, SHORTCUTS CHEATSHEET, CLOUD SHARE & STORAGE     -->
+  <!-- ========================================================================= -->
+
+  <!-- Modal: Help & Navigation Walkthrough -->
+  <div id="modalHelp" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#14161f] border border-[#2a2e40] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-[#232738] flex items-center justify-between bg-[#10121a]">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <i data-lucide="book-open" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white tracking-wide">Miko Studio Slicer • Help & Walkthrough</h2>
+            <p class="text-[11px] text-slate-400">Master guides, architectural coloring, and cloud workflows</p>
+          </div>
+        </div>
+        <button id="btnCloseHelp" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs Inside Help -->
+      <div class="flex border-b border-[#232738] bg-[#12141d] px-6 text-xs font-semibold">
+        <button type="button" data-help-tab="workflow" class="help-tab-btn py-3 px-3 text-amber-400 border-b-2 border-amber-400 flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i> 1. Core Workflow
+        </button>
+        <button type="button" data-help-tab="behr" class="help-tab-btn py-3 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5">
+          <i data-lucide="palette" class="w-3.5 h-3.5"></i> 2. Behr Visualizer & Bucket
+        </button>
+        <button type="button" data-help-tab="cutout" class="help-tab-btn py-3 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5">
+          <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> 3. Cutout & Vectorization
+        </button>
+        <button type="button" data-help-tab="cloud" class="help-tab-btn py-3 px-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-1.5">
+          <i data-lucide="cloud" class="w-3.5 h-3.5"></i> 4. Project & Cloud Drives
+        </button>
+      </div>
+
+      <!-- Help Tab Contents -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300 flex-1 leading-relaxed">
+        <!-- Tab 1: Workflow -->
+        <div id="helpTabContent-workflow" class="space-y-4">
+          <div class="bg-[#181b26] p-4 rounded-xl border border-slate-800">
+            <h3 class="text-amber-400 font-bold text-sm mb-1.5 flex items-center gap-2">
+              <i data-lucide="workflow" class="w-4 h-4"></i> Studio Workflow in 3 Simple Steps
+            </h3>
+            <p class="text-slate-300 text-xs">
+              Miko Studio Slicer bridges raster artwork, vector tracing, and broadcast graphics into a unified desktop pipeline:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+              <div class="bg-[#10121a] p-3 rounded-lg border border-slate-800/80">
+                <div class="text-amber-400 font-bold mb-1">1. Deconstruct (Tab 1)</div>
+                <p class="text-[11px] text-slate-400">Load your image, extract brand palettes, run AI background removal (U2Net), and crop out regions.</p>
+              </div>
+              <div class="bg-[#10121a] p-3 rounded-lg border border-slate-800/80">
+                <div class="text-indigo-400 font-bold mb-1">2. Canvas Studio (Tab 2)</div>
+                <p class="text-[11px] text-slate-400">Arrange vector paths, apply Behr paint colors, use Paint Bucket fill, toggle Studio Glow, and adjust layer hierarchy.</p>
+              </div>
+              <div class="bg-[#10121a] p-3 rounded-lg border border-slate-800/80">
+                <div class="text-emerald-400 font-bold mb-1">3. Broadcast & Export (Tab 3)</div>
+                <p class="text-[11px] text-slate-400">Generate broadcast 1080p Lower Thirds, export live animated OBS overlays, or package layered SVG & PSD files.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Behr Visualizer & Bucket Tool -->
+        <div id="helpTabContent-behr" class="hidden space-y-4">
+          <div class="bg-[#181b26] p-4 rounded-xl border border-slate-800">
+            <h3 class="text-amber-400 font-bold text-sm mb-1.5 flex items-center gap-2">
+              <i data-lucide="palette" class="w-4 h-4"></i> Behr & Home Depot Style Color Visualizer
+            </h3>
+            <p class="text-slate-300 text-xs mb-3">
+              Inspired by architectural color apps like Behr ProjectColor, you can now recolor individual items on your canvas with zero friction:
+            </p>
+            <ul class="space-y-2 text-[11px] text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold shrink-0">Bucket (K)</span>
+                <span>Select the Paint Bucket tool from the toolbar and click directly on any shape, text, or vector path to flood fill it with your active color.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold shrink-0">Hue Slider</span>
+                <span>Drag the 0°–360° Hue Slider in the inspector to rotate the color temperature and hue of your selected palette in real time.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold shrink-0">Cycle (C)</span>
+                <span>Hit the "Cycle Colors" button or press keyboard shortcut <strong>C</strong> to quickly audition every color in the selected designer theme on your active selection.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold shrink-0">Studio Glow</span>
+                <span>Check "Studio Highlight Glow" on any layer to add customizable neon or stage lighting with adjustable blur and radius.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tab 3: Cutout & Vectorization -->
+        <div id="helpTabContent-cutout" class="hidden space-y-4">
+          <div class="bg-[#181b26] p-4 rounded-xl border border-slate-800">
+            <h3 class="text-indigo-400 font-bold text-sm mb-1.5 flex items-center gap-2">
+              <i data-lucide="wand-2" class="w-4 h-4"></i> AI Cutout & VTracer Precision Vectorization
+            </h3>
+            <p class="text-slate-300 text-xs mb-3">
+              Seamlessly transform photographs, architectural elevations, and artwork into clean vector layers:
+            </p>
+            <div class="space-y-2 text-[11px] text-slate-300">
+              <p>• <strong>AI Background Cutout:</strong> Powered by U-2-Net neural network to isolate subjects with anti-aliased alpha borders.</p>
+              <p>• <strong>Vector Separation Studio:</strong> Choose from 2 to 16 color layers with spline or polygon curves. Check "Snap to Brand Colors" to automatically conform tracing to your curated palette.</p>
+              <p>• <strong>Magic Cleanup Eraser (E):</strong> Hover over any unwanted curve or path to see a red highlighted preview, then click to erase it even deep within nested groups!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Cloud & Project Sharing -->
+        <div id="helpTabContent-cloud" class="hidden space-y-4">
+          <div class="bg-[#181b26] p-4 rounded-xl border border-slate-800">
+            <h3 class="text-emerald-400 font-bold text-sm mb-1.5 flex items-center gap-2">
+              <i data-lucide="cloud" class="w-4 h-4"></i> Project Files (.mikoproj) & Cloud Sharing
+            </h3>
+            <p class="text-slate-300 text-xs mb-3">
+              Keep your project data intact with versioned project packages and 1-click cloud sync:
+            </p>
+            <div class="space-y-2 text-[11px] text-slate-300">
+              <p>• <strong>Data Integrity:</strong> Saving with <code>Ctrl+S</code> writes an enriched <code>.mikoproj</code> envelope bundling canvas dimensions, object hierarchy, locked layer flags, and brand color swatches.</p>
+              <p>• <strong>Cloud Drives:</strong> Click the "Share" button or open the <em>File &gt; Cloud &amp; Share</em> menu to instantly launch Google Drive, Microsoft OneDrive, or Dropbox with your project file ready to upload.</p>
+              <p>• <strong>Direct Device Share:</strong> Uses the native Web Share API to send projects via AirDrop, Quick Share, or team chat apps.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-[#232738] bg-[#10121a] flex items-center justify-between">
+        <button type="button" id="btnHelpOpenShortcuts" class="text-xs text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1.5">
+          <i data-lucide="keyboard" class="w-3.5 h-3.5"></i> Open Keyboard Cheatsheet
+        </button>
+        <button type="button" id="btnHelpCloseDone" class="bg-[#20222a] hover:bg-[#282a35] text-slate-200 text-xs font-semibold px-4 py-1.5 rounded-lg border border-slate-700 transition">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Keyboard Shortcuts Cheatsheet -->
+  <div id="modalShortcuts" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#14161f] border border-[#2a2e40] rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-[#232738] flex items-center justify-between bg-[#10121a]">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <i data-lucide="keyboard" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white tracking-wide">Keyboard Shortcuts Cheatsheet</h2>
+            <p class="text-[11px] text-slate-400">Fast desktop navigation and editing hotkeys</p>
+          </div>
+        </div>
+        <button id="btnCloseShortcuts" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Shortcuts Body -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Tools -->
+          <div class="bg-[#181b26] p-3.5 rounded-xl border border-slate-800 space-y-2">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-amber-400 border-b border-slate-800 pb-1">Tools & Modes</div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Pointer / Select</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">V</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Lasso Loop Selection</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">L</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Magic Path Eraser</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">E</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Paint Bucket Fill</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">K</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Pan Viewport (Hand)</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">H / Space</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Insert Text</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">T</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Cycle Behr Colors</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-amber-300 font-mono text-[10px]">C</kbd></div>
+          </div>
+
+          <!-- Project & File -->
+          <div class="bg-[#181b26] p-3.5 rounded-xl border border-slate-800 space-y-2">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 border-b border-slate-800 pb-1">Project & File</div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Save Project (.mikoproj)</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-indigo-300 font-mono text-[10px]">Ctrl+S</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Open Project</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-indigo-300 font-mono text-[10px]">Ctrl+O</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Cloud Share & Drive</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-indigo-300 font-mono text-[10px]">Ctrl+Shift+S</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Export SVG</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-indigo-300 font-mono text-[10px]">Ctrl+E</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Help & Master Guide</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-indigo-300 font-mono text-[10px]">F1 / ?</kbd></div>
+          </div>
+
+          <!-- Edit & Arrange -->
+          <div class="bg-[#181b26] p-3.5 rounded-xl border border-slate-800 space-y-2">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 border-b border-slate-800 pb-1">Edit & Arrange</div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Undo</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-emerald-300 font-mono text-[10px]">Ctrl+Z</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Redo</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-emerald-300 font-mono text-[10px]">Ctrl+Y</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Duplicate Selection</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-emerald-300 font-mono text-[10px]">Ctrl+D</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Group / Ungroup</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-emerald-300 font-mono text-[10px]">Ctrl+G / Ctrl+Shift+G</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Bring Forward / Back</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-emerald-300 font-mono text-[10px]">Ctrl+] / Ctrl+[</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Bring Front / Back</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-emerald-300 font-mono text-[10px]">Ctrl+Shift+] / [</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Delete Selected</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-red-300 font-mono text-[10px]">Del / Backspace</kbd></div>
+          </div>
+
+          <!-- Navigation & Views -->
+          <div class="bg-[#181b26] p-3.5 rounded-xl border border-slate-800 space-y-2">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-sky-400 border-b border-slate-800 pb-1">Navigation & Views</div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Switch to Deconstruct</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-sky-300 font-mono text-[10px]">1</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Switch to Canvas</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-sky-300 font-mono text-[10px]">2</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Switch to Lower Third</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-sky-300 font-mono text-[10px]">3</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Reset Canvas Zoom (100%)</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-sky-300 font-mono text-[10px]">0</kbd></div>
+            <div class="flex justify-between items-center"><span class="text-slate-300">Zoom In / Zoom Out</span><kbd class="px-2 py-0.5 bg-[#10121a] border border-slate-700 rounded text-sky-300 font-mono text-[10px]">+ / -</kbd></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Cloud Storage & Direct Share -->
+  <div id="modalCloudShare" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#14161f] border border-[#2a2e40] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-[#232738] flex items-center justify-between bg-[#10121a]">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+            <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-white tracking-wide">Share & Cloud Storage Hub</h2>
+            <p class="text-[11px] text-slate-400">Export with data integrity to your preferred cloud drive</p>
+          </div>
+        </div>
+        <button id="btnCloseCloudShare" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Cloud Options -->
+      <div class="p-6 space-y-3 text-xs">
+        <!-- Direct Device Share -->
+        <button type="button" id="btnCloudShareDirect" class="w-full p-3 rounded-xl bg-[#181b26] hover:bg-[#202433] border border-slate-800 hover:border-emerald-500/50 transition flex items-center justify-between text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-105 transition">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-white font-semibold">Direct Device Share (AirDrop / Quick Share)</div>
+              <div class="text-[11px] text-slate-400">Send project via system share sheet or instant messengers</div>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition"></i>
+        </button>
+
+        <!-- Google Drive -->
+        <button type="button" id="btnCloudDriveGoogle" class="w-full p-3 rounded-xl bg-[#181b26] hover:bg-[#202433] border border-slate-800 hover:border-amber-500/50 transition flex items-center justify-between text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition">
+              <i data-lucide="hard-drive" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-white font-semibold">Google Drive</div>
+              <div class="text-[11px] text-slate-400">Download verified .mikoproj and open Google Drive</div>
+            </div>
+          </div>
+          <span class="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-mono">1-Click</span>
+        </button>
+
+        <!-- Microsoft OneDrive -->
+        <button type="button" id="btnCloudDriveOneDrive" class="w-full p-3 rounded-xl bg-[#181b26] hover:bg-[#202433] border border-slate-800 hover:border-blue-500/50 transition flex items-center justify-between text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 group-hover:scale-105 transition">
+              <i data-lucide="cloud" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-white font-semibold">Microsoft OneDrive</div>
+              <div class="text-[11px] text-slate-400">Save project package and navigate to OneDrive</div>
+            </div>
+          </div>
+          <span class="text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono">1-Click</span>
+        </button>
+
+        <!-- Dropbox -->
+        <button type="button" id="btnCloudDriveDropbox" class="w-full p-3 rounded-xl bg-[#181b26] hover:bg-[#202433] border border-slate-800 hover:border-indigo-500/50 transition flex items-center justify-between text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:scale-105 transition">
+              <i data-lucide="box" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-white font-semibold">Dropbox</div>
+              <div class="text-[11px] text-slate-400">Package .mikoproj and launch Dropbox upload folder</div>
+            </div>
+          </div>
+          <span class="text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded font-mono">1-Click</span>
+        </button>
+
+        <!-- Copy Project JSON Envelope -->
+        <button type="button" id="btnCloudCopyJson" class="w-full p-3 rounded-xl bg-[#181b26] hover:bg-[#202433] border border-slate-800 hover:border-slate-600 transition flex items-center justify-between text-left group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center border border-slate-700 group-hover:scale-105 transition">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-white font-semibold">Copy Project JSON to Clipboard</div>
+              <div class="text-[11px] text-slate-400">Raw envelope string for developer handoff or backup</div>
+            </div>
+          </div>
+          <i data-lucide="clipboard-check" class="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition"></i>
+        </button>
+      </div>
+
+      <!-- Cloud Status / Notice -->
+      <div id="cloudShareStatusNotice" class="hidden px-6 py-2.5 bg-emerald-500/10 border-t border-emerald-500/20 text-[11px] text-emerald-300 flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 shrink-0"></i>
+        <span id="cloudShareStatusText">Project downloaded! Drive tab opened.</span>
+      </div>
+    </div>
+  </div>
 
   <script>
     lucide.createIcons();
@@ -787,7 +1382,20 @@
       }
 
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'c' || e.key === 'C') { e.preventDefault(); copyActive(); }
+        if (e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          if (e.shiftKey) openCloudShareModal();
+          else saveProjectFile();
+        }
+        else if (e.key === 'o' || e.key === 'O') {
+          e.preventDefault();
+          document.getElementById('projectInput').click();
+        }
+        else if (e.key === 'e' || e.key === 'E') {
+          e.preventDefault();
+          document.getElementById('btnExportSVG').click();
+        }
+        else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); copyActive(); }
         else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); pasteActive(); }
         else if (e.key === 'x' || e.key === 'X') { e.preventDefault(); cutActive(); }
         else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); duplicateActive(); }
@@ -800,12 +1408,23 @@
         e.preventDefault();
         deleteActive();
       } else if (e.key === 'Escape') {
+        closeHelpModal();
+        closeShortcutsModal();
+        closeCloudShareModal();
+        document.querySelectorAll('#topMenuBar .menu-content').forEach(c => c.classList.add('hidden'));
+        if (typeof extractMode !== 'undefined' && extractMode) { exitExtractMode(); return; }
         if (eyedropperFallbackActive) { setEyedropperFallback(false); return; }
         fCanvas.discardActiveObject();
         fCanvas.renderAll();
       } else if ((e.key === 'i' || e.key === 'I') && !e.altKey) {
         e.preventDefault();
         activateEyedropper();
+      } else if (e.key === '?' || e.key === 'F1') {
+        e.preventDefault();
+        openHelpModal('workflow');
+      } else if (e.key === '/') {
+        e.preventDefault();
+        openShortcutsModal();
       } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && activeObj) {
         e.preventDefault();
         if (activeObj.locked) return;
@@ -1657,16 +2276,51 @@
       }
     });
 
-    // 9. Shapes Library & Freehand Drawing
-    document.getElementById('btnShapeMenu').addEventListener('click', () => {
-      document.getElementById('shapeDropdown').classList.toggle('hidden');
+    // 9. Shapes Library, Freehand Drawing, and Region Extractor
+    function addDefaultShape() {
+      const shape = new fabric.Rect({
+        width: 150,
+        height: 150,
+        fill: '#3b82f6',
+        rx: 8,
+        ry: 8,
+        cornerRadius: 8,
+        name: 'Shape (Rectangle)'
+      });
+      const canvasW = fCanvas.getWidth();
+      const canvasH = fCanvas.getHeight();
+      shape.set({
+        left: Math.round((canvasW - 150) / 2),
+        top: Math.round((canvasH - 150) / 2)
+      });
+      fCanvas.add(shape);
+      fCanvas.setActiveObject(shape);
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+      updateLayersUI();
+      syncInspector();
+      document.getElementById('statusText').innerText = "Added standard shape (150x150, #3b82f6) to center.";
+    }
+    window.addDefaultShape = addDefaultShape;
+    document.getElementById('btnAddShape')?.addEventListener('click', addDefaultShape);
+
+    document.getElementById('btnShapeMenu')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('shapeDropdown')?.classList.toggle('hidden');
+    });
+
+    window.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('shapeDropdown');
+      if (dropdown && !dropdown.classList.contains('hidden') && !e.target.closest('#btnShapeMenu')) {
+        dropdown.classList.add('hidden');
+      }
     });
 
     window.addParametricShape = (type) => {
-      document.getElementById('shapeDropdown').classList.add('hidden');
-      const fill = document.getElementById('propFillColor').value;
-      const stroke = document.getElementById('propStrokeColor').value;
-      const strokeWidth = parseInt(document.getElementById('propStrokeWidth').value, 10);
+      document.getElementById('shapeDropdown')?.classList.add('hidden');
+      const fill = document.getElementById('propFillColor')?.value || '#3b82f6';
+      const stroke = document.getElementById('propStrokeColor')?.value || '#000000';
+      const strokeWidth = parseInt(document.getElementById('propStrokeWidth')?.value, 10) || 0;
 
       let shape;
       if (type === 'rect') shape = new fabric.Rect({ width: 140, height: 90, fill, stroke, strokeWidth });
@@ -1681,59 +2335,538 @@
         shape = new fabric.Polygon(pts, { fill, stroke, strokeWidth });
       }
 
-      shape.set({ left: 300, top: 200, name: `Shape (${type})` });
-      fCanvas.add(shape);
-      fCanvas.setActiveObject(shape);
-      fCanvas.renderAll();
-      updateLayersUI();
+      if (shape) {
+        shape.set({ left: 300, top: 200, name: `Shape (${type})` });
+        fCanvas.add(shape);
+        fCanvas.setActiveObject(shape);
+        fCanvas.requestRenderAll();
+        saveCanvasState();
+        updateLayersUI();
+        syncInspector();
+      }
     };
 
-    document.getElementById('btnToggleDraw').addEventListener('click', () => {
+    function toggleDrawBrush() {
       fCanvas.isDrawingMode = !fCanvas.isDrawingMode;
+      const btn = document.getElementById('btnToggleDraw');
       if (fCanvas.isDrawingMode) {
-        fCanvas.freeDrawingBrush.width = parseInt(document.getElementById('propStrokeWidth').value, 10) || 5;
-        fCanvas.freeDrawingBrush.color = document.getElementById('propStrokeColor').value || '#F59E0B';
+        if (!fCanvas.freeDrawingBrush) {
+          fCanvas.freeDrawingBrush = new fabric.PencilBrush(fCanvas);
+        }
+        fCanvas.freeDrawingBrush.color = '#ffffff';
+        fCanvas.freeDrawingBrush.width = 5;
+        if (btn) {
+          btn.classList.add('text-amber-400', 'bg-amber-500/20');
+          btn.classList.remove('text-slate-300');
+          const icon = btn.querySelector('svg, i');
+          if (icon) {
+            icon.classList.remove('text-indigo-400');
+            icon.classList.add('text-amber-400');
+          }
+        }
+        if (currentTool !== 'select') setTool('select', { keepDrawing: true });
+        document.getElementById('statusText').innerText = "Draw Brush active (Color: #ffffff, Width: 5px)";
+      } else {
+        if (btn) {
+          btn.classList.remove('text-amber-400', 'bg-amber-500/20');
+          btn.classList.add('text-slate-300');
+          const icon = btn.querySelector('svg, i');
+          if (icon) {
+            icon.classList.remove('text-amber-400');
+            icon.classList.add('text-indigo-400');
+          }
+        }
+        document.getElementById('statusText').innerText = "Draw Brush deactivated.";
       }
-      document.getElementById('btnToggleDraw').classList.toggle('bg-amber-500/20', fCanvas.isDrawingMode);
-      if (fCanvas.isDrawingMode && currentTool !== 'select') setTool('select', { keepDrawing: true });
-    });
+    }
+    document.getElementById('btnToggleDraw')?.addEventListener('click', toggleDrawBrush);
 
-    document.getElementById('btnPunchOut').addEventListener('click', () => {
-      const active = fCanvas.getActiveObject();
-      if (!active) return alert("Select a top shape to punch out through underlying layers.");
-      if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it first."; return; }
-      active.set('globalCompositeOperation', 'destination-out');
-      fCanvas.requestRenderAll();
+    fCanvas.on('path:created', (e) => {
+      if (e && e.path) {
+        e.path.set({ name: 'Brush Stroke' });
+      }
       saveCanvasState();
-      document.getElementById('statusText').innerText = "Punch-out applied to active shape!";
+      updateLayersUI();
     });
 
-    // 10. Project Save & Load Engine (.mikoproj)
-    document.getElementById('btnSaveProject').addEventListener('click', () => {
-      const proj = fCanvas.toJSON(SERIAL_PROPS);
-      const blob = new Blob([JSON.stringify(proj, null, 2)], { type: 'application/json' });
+    // --- In-Place Region Extractor (X) -----------------------------------
+    let extractMode = false;
+    let extractTargetImage = null;
+    let extractCropRect = null;
+    let extractIsDragging = false;
+    let extractStartPointer = null;
+
+    function triggerExtractRegion() {
+      if (extractMode) {
+        exitExtractMode();
+        return;
+      }
+      let target = fCanvas.getActiveObject();
+      if (!target || target.type !== 'image') {
+        const images = fCanvas.getObjects().filter(o => o.type === 'image' && o.visible !== false);
+        if (images.length === 1) {
+          target = images[0];
+          fCanvas.setActiveObject(target);
+          fCanvas.requestRenderAll();
+        } else {
+          document.getElementById('statusText').innerText = "Select a raster image on the canvas first to extract a region (X).";
+          return;
+        }
+      }
+      enterExtractMode(target);
+    }
+
+    function enterExtractMode(target) {
+      extractMode = true;
+      extractTargetImage = target;
+      extractIsDragging = false;
+      extractStartPointer = null;
+
+      if (extractCropRect) {
+        fCanvas.remove(extractCropRect);
+        extractCropRect = null;
+      }
+
+      fCanvas.selection = false;
+      fCanvas.discardActiveObject();
+      fCanvas.getObjects().forEach(o => {
+        o._prevSelectable = o.selectable;
+        o._prevEvented = o.evented;
+        o.selectable = false;
+        o.evented = false;
+      });
+
+      fCanvas.defaultCursor = 'crosshair';
+      fCanvas.hoverCursor = 'crosshair';
+
+      const btn = document.getElementById('btnExtractRegion') || document.getElementById('btnPunchOut');
+      if (btn) {
+        btn.classList.add('bg-pink-500/25', 'text-pink-300', 'border-pink-500');
+      }
+
+      document.getElementById('statusText').innerText = "Extract Region (X): Click and drag a marquee box over the target area (Esc to cancel)...";
+      fCanvas.requestRenderAll();
+    }
+
+    function exitExtractMode(silent) {
+      extractMode = false;
+      extractIsDragging = false;
+      extractStartPointer = null;
+
+      if (extractCropRect) {
+        fCanvas.remove(extractCropRect);
+        extractCropRect = null;
+      }
+
+      fCanvas.selection = true;
+      fCanvas.getObjects().forEach(o => {
+        if (o._prevSelectable !== undefined) {
+          o.selectable = o._prevSelectable;
+          delete o._prevSelectable;
+        } else {
+          o.selectable = true;
+        }
+        if (o._prevEvented !== undefined) {
+          o.evented = o._prevEvented;
+          delete o._prevEvented;
+        } else {
+          o.evented = true;
+        }
+      });
+
+      fCanvas.defaultCursor = 'default';
+      fCanvas.hoverCursor = 'move';
+
+      const btn = document.getElementById('btnExtractRegion') || document.getElementById('btnPunchOut');
+      if (btn) {
+        btn.classList.remove('bg-pink-500/25', 'text-pink-300', 'border-pink-500');
+      }
+
+      if (extractTargetImage && !silent) {
+        if (fCanvas.getObjects().includes(extractTargetImage)) {
+          fCanvas.setActiveObject(extractTargetImage);
+        }
+      }
+      fCanvas.requestRenderAll();
+      if (!silent) {
+        document.getElementById('statusText').innerText = "Extract Region mode closed.";
+      }
+    }
+
+    async function processRegionExtraction(cropBox, targetImg) {
+      const btn = document.getElementById('btnExtractRegion') || document.getElementById('btnPunchOut');
+      const origBtnContent = btn ? btn.innerHTML : null;
+
+      try {
+        const imgEl = targetImg.getElement ? targetImg.getElement() : targetImg._element;
+        if (!imgEl) throw new Error("Underlying image element not found.");
+
+        const naturalW = imgEl.naturalWidth || imgEl.width || targetImg.width;
+        const naturalH = imgEl.naturalHeight || imgEl.height || targetImg.height;
+
+        const imgLeft = targetImg.left;
+        const imgTop = targetImg.top;
+        const imgScaleX = targetImg.scaleX || 1;
+        const imgScaleY = targetImg.scaleY || 1;
+        const imgScaledW = targetImg.getScaledWidth ? targetImg.getScaledWidth() : (targetImg.width * imgScaleX);
+        const imgScaledH = targetImg.getScaledHeight ? targetImg.getScaledHeight() : (targetImg.height * imgScaleY);
+
+        // Compute intersection between crop box and target image on canvas
+        const interLeft = Math.max(cropBox.left, imgLeft);
+        const interTop = Math.max(cropBox.top, imgTop);
+        const interRight = Math.min(cropBox.left + cropBox.width, imgLeft + imgScaledW);
+        const interBottom = Math.min(cropBox.top + cropBox.height, imgTop + imgScaledH);
+
+        const interW = interRight - interLeft;
+        const interH = interBottom - interTop;
+
+        if (interW < 4 || interH < 4) {
+          document.getElementById('statusText').innerText = "Selected crop region falls outside the image.";
+          exitExtractMode();
+          return;
+        }
+
+        // Map canvas intersection rect to natural image coordinates
+        const relX = interLeft - imgLeft;
+        const relY = interTop - imgTop;
+        const sx = Math.max(0, Math.min(naturalW - 1, (relX / imgScaledW) * naturalW));
+        const sy = Math.max(0, Math.min(naturalH - 1, (relY / imgScaledH) * naturalH));
+        const sWidth = Math.max(1, Math.min(naturalW - sx, (interW / imgScaledW) * naturalW));
+        const sHeight = Math.max(1, Math.min(naturalH - sy, (interH / imgScaledH) * naturalH));
+
+        // Create temporary off-screen canvas at native crop resolution
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = Math.max(1, Math.round(sWidth));
+        offCanvas.height = Math.max(1, Math.round(sHeight));
+        const ctx = offCanvas.getContext('2d');
+        ctx.drawImage(imgEl, sx, sy, sWidth, sHeight, 0, 0, offCanvas.width, offCanvas.height);
+        const croppedDataUrl = offCanvas.toDataURL('image/png');
+
+        // Show loading spinner on button
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-pink-400"></i> <span class="animate-pulse">Extracting...</span>`;
+          if (window.lucide && lucide.createIcons) lucide.createIcons();
+        }
+        document.getElementById('statusText').innerText = `Extracting region (${Math.round(interW)}x${Math.round(interH)}px) via AI cutout...`;
+
+        // Send cropped base64 to POST /api/cutout
+        const resp = await fetch('/api/cutout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: croppedDataUrl, mode: 'auto' })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (!data.image) throw new Error(data.error || "Cutout endpoint did not return an image.");
+
+        // Load isolated layer and place seamlessly at exact canvas coordinates
+        await new Promise((resolve, reject) => {
+          fabric.Image.fromURL(data.image, (cutoutImg) => {
+            if (!cutoutImg) return reject(new Error("Failed to load cutout image."));
+
+            cutoutImg.set({
+              left: interLeft,
+              top: interTop,
+              scaleX: interW / cutoutImg.width,
+              scaleY: interH / cutoutImg.height,
+              name: `Extracted Layer (${Math.round(interW)}x${Math.round(interH)})`
+            });
+
+            if (extractCropRect) {
+              fCanvas.remove(extractCropRect);
+              extractCropRect = null;
+            }
+
+            fCanvas.add(cutoutImg);
+            exitExtractMode(true);
+            fCanvas.setActiveObject(cutoutImg);
+            fCanvas.requestRenderAll();
+            saveCanvasState();
+            updateLayersUI();
+            syncInspector();
+            document.getElementById('statusText').innerText = `Extracted region placed seamlessly in-place!`;
+            resolve();
+          });
+        });
+      } catch (err) {
+        console.error("Region extraction failed:", err);
+        document.getElementById('statusText').innerText = `Region extraction failed: ${err.message}`;
+        exitExtractMode();
+      } finally {
+        if (btn && origBtnContent) {
+          btn.innerHTML = origBtnContent;
+          btn.disabled = false;
+          if (window.lucide && lucide.createIcons) lucide.createIcons();
+        }
+      }
+    }
+
+    document.getElementById('btnExtractRegion')?.addEventListener('click', triggerExtractRegion);
+    document.getElementById('btnPunchOut')?.addEventListener('click', triggerExtractRegion);
+
+    // 10. Project Save & Load Engine (.mikoproj) with Complete Data Integrity & Cloud Drive Hub
+    function buildProjectEnvelope() {
+      const fabricData = fCanvas.toJSON(SERIAL_PROPS);
+      const envelope = {
+        mikoVersion: "2.0",
+        appName: "Miko Studio Slicer",
+        timestamp: new Date().toISOString(),
+        canvas: {
+          width: fCanvas.getWidth(),
+          height: fCanvas.getHeight(),
+          backgroundColor: fCanvas.backgroundColor || '#12141A'
+        },
+        brandPalette: Array.isArray(currentBrandPalette) ? currentBrandPalette.slice() : [],
+        layersCount: fCanvas.getObjects().length,
+        fabric: fabricData
+      };
+      const jsonStr = JSON.stringify(envelope, null, 2);
+      const filename = `MikoStudio_Project_${Date.now()}.mikoproj`;
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      return { envelope, jsonStr, filename, blob };
+    }
+    window.buildProjectEnvelope = buildProjectEnvelope;
+
+    function saveProjectFile() {
+      const { blob, filename } = buildProjectEnvelope();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `MikoStudio_Project_${Date.now()}.mikoproj`;
+      a.download = filename;
       a.click();
-    });
+      document.getElementById('statusText').innerText = `Saved project: ${filename}`;
+    }
+    window.saveProjectFile = saveProjectFile;
+    document.getElementById('btnSaveProject').addEventListener('click', saveProjectFile);
 
-    document.getElementById('projectInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        fCanvas.loadFromJSON(evt.target.result, () => {
+    function loadProjectData(rawContent, filename) {
+      try {
+        const parsed = JSON.parse(rawContent);
+        const fabricPayload = parsed.fabric ? parsed.fabric : parsed; // backward compatibility
+
+        // Restore canvas dimensions if specified in envelope
+        if (parsed.canvas && parsed.canvas.width && parsed.canvas.height) {
+          fCanvas.setWidth(parsed.canvas.width);
+          fCanvas.setHeight(parsed.canvas.height);
+          if (parsed.canvas.backgroundColor) fCanvas.setBackgroundColor(parsed.canvas.backgroundColor);
+        }
+
+        // Restore brand palette if specified
+        if (Array.isArray(parsed.brandPalette) && parsed.brandPalette.length > 0) {
+          currentBrandPalette = parsed.brandPalette.slice();
+          if (typeof renderBrandSwatches === 'function') renderBrandSwatches(currentBrandPalette);
+        }
+
+        fCanvas.loadFromJSON(fabricPayload, () => {
           fCanvas.getObjects().forEach(o => applyLockState(o, !!o.locked));
           fCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
           updateZoomUI();
           fCanvas.renderAll();
           switchTab('canvas');
           updateLayersUI();
-          document.getElementById('statusText').innerText = `Loaded project: ${file.name}`;
+          document.getElementById('statusText').innerText = parsed.mikoVersion
+            ? `Loaded project (v${parsed.mikoVersion}): ${filename}`
+            : `Loaded project: ${filename}`;
         });
-      };
+      } catch (err) {
+        console.error('Failed to parse project file:', err);
+        alert('Invalid or corrupted project file.');
+      }
+    }
+    window.loadProjectData = loadProjectData;
+
+    document.getElementById('projectInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => loadProjectData(evt.target.result, file.name);
       reader.readAsText(file);
+      e.target.value = ''; // allow loading same file again
+    });
+
+    // Cloud Drive & Direct Device Sharing Handlers
+    function saveToCloudDrive(provider) {
+      const { blob, filename } = buildProjectEnvelope();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+
+      const urls = {
+        google: 'https://drive.google.com/drive/my-drive',
+        onedrive: 'https://onedrive.live.com',
+        dropbox: 'https://www.dropbox.com/home'
+      };
+
+      const targetUrl = urls[provider] || urls.google;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+
+      const notice = document.getElementById('cloudShareStatusNotice');
+      const noticeText = document.getElementById('cloudShareStatusText');
+      if (notice && noticeText) {
+        notice.classList.remove('hidden');
+        noticeText.innerText = `Downloaded ${filename}! Opening ${provider.toUpperCase()} in new tab.`;
+      }
+      document.getElementById('statusText').innerText = `Exported for ${provider.toUpperCase()}: ${filename}`;
+    }
+    window.saveToCloudDrive = saveToCloudDrive;
+
+    async function directDeviceShare() {
+      const { blob, filename } = buildProjectEnvelope();
+      const file = new File([blob], filename, { type: 'application/json' });
+      const notice = document.getElementById('cloudShareStatusNotice');
+      const noticeText = document.getElementById('cloudShareStatusText');
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'Miko Studio Slicer Project',
+            text: `Sharing project file ${filename}`,
+            files: [file]
+          });
+          if (notice && noticeText) {
+            notice.classList.remove('hidden');
+            noticeText.innerText = "Shared successfully via system share sheet!";
+          }
+          return;
+        } catch (err) {
+          if (err.name !== 'AbortError') console.warn('Share sheet error:', err);
+        }
+      }
+
+      // Fallback
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      if (notice && noticeText) {
+        notice.classList.remove('hidden');
+        noticeText.innerText = `Downloaded ${filename} (Device Share fallback).`;
+      }
+    }
+    window.directDeviceShare = directDeviceShare;
+
+    function copyProjectJson() {
+      const { jsonStr } = buildProjectEnvelope();
+      navigator.clipboard.writeText(jsonStr).then(() => {
+        const notice = document.getElementById('cloudShareStatusNotice');
+        const noticeText = document.getElementById('cloudShareStatusText');
+        if (notice && noticeText) {
+          notice.classList.remove('hidden');
+          noticeText.innerText = "Project envelope JSON copied to clipboard!";
+        }
+        document.getElementById('statusText').innerText = "Project envelope JSON copied to clipboard!";
+      }).catch(err => {
+        alert("Could not copy to clipboard: " + err);
+      });
+    }
+    window.copyProjectJson = copyProjectJson;
+
+    document.getElementById('btnCloudShareDirect')?.addEventListener('click', directDeviceShare);
+    document.getElementById('btnCloudDriveGoogle')?.addEventListener('click', () => saveToCloudDrive('google'));
+    document.getElementById('btnCloudDriveOneDrive')?.addEventListener('click', () => saveToCloudDrive('onedrive'));
+    document.getElementById('btnCloudDriveDropbox')?.addEventListener('click', () => saveToCloudDrive('dropbox'));
+    document.getElementById('btnCloudCopyJson')?.addEventListener('click', copyProjectJson);
+
+    // Modal Navigation & UI Handlers
+    function openHelpModal(tab) {
+      const modal = document.getElementById('modalHelp');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      if (tab) switchHelpTab(tab);
+      if (window.lucide && lucide.createIcons) lucide.createIcons();
+    }
+    window.openHelpModal = openHelpModal;
+
+    function closeHelpModal() {
+      document.getElementById('modalHelp')?.classList.add('hidden');
+    }
+    window.closeHelpModal = closeHelpModal;
+
+    function switchHelpTab(tabId) {
+      document.querySelectorAll('#modalHelp [data-help-tab]').forEach(btn => {
+        const active = btn.dataset.helpTab === tabId;
+        btn.classList.toggle('text-amber-400', active);
+        btn.classList.toggle('border-amber-400', active);
+        btn.classList.toggle('text-slate-400', !active);
+        btn.classList.toggle('border-transparent', !active);
+      });
+      document.querySelectorAll('[id^="helpTabContent-"]').forEach(content => {
+        content.classList.toggle('hidden', content.id !== `helpTabContent-${tabId}`);
+      });
+    }
+    window.switchHelpTab = switchHelpTab;
+
+    document.querySelectorAll('#modalHelp [data-help-tab]').forEach(btn => {
+      btn.addEventListener('click', () => switchHelpTab(btn.dataset.helpTab));
+    });
+
+    document.getElementById('btnCloseHelp')?.addEventListener('click', closeHelpModal);
+    document.getElementById('btnHelpCloseDone')?.addEventListener('click', closeHelpModal);
+    document.getElementById('btnHeaderHelp')?.addEventListener('click', () => openHelpModal('workflow'));
+    document.getElementById('btnHelpOpenShortcuts')?.addEventListener('click', () => {
+      closeHelpModal();
+      openShortcutsModal();
+    });
+
+    function openShortcutsModal() {
+      const modal = document.getElementById('modalShortcuts');
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+      }
+    }
+    window.openShortcutsModal = openShortcutsModal;
+
+    function closeShortcutsModal() {
+      document.getElementById('modalShortcuts')?.classList.add('hidden');
+    }
+    window.closeShortcutsModal = closeShortcutsModal;
+
+    document.getElementById('btnCloseShortcuts')?.addEventListener('click', closeShortcutsModal);
+
+    function openCloudShareModal() {
+      const modal = document.getElementById('modalCloudShare');
+      if (modal) {
+        modal.classList.remove('hidden');
+        document.getElementById('cloudShareStatusNotice')?.classList.add('hidden');
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+      }
+    }
+    window.openCloudShareModal = openCloudShareModal;
+
+    function closeCloudShareModal() {
+      document.getElementById('modalCloudShare')?.classList.add('hidden');
+    }
+    window.closeCloudShareModal = closeCloudShareModal;
+
+    document.getElementById('btnCloseCloudShare')?.addEventListener('click', closeCloudShareModal);
+    document.getElementById('btnQuickShare')?.addEventListener('click', openCloudShareModal);
+
+    // Desktop Menu Bar dropdown handler
+    document.querySelectorAll('#topMenuBar .menu-dropdown').forEach(dropdown => {
+      const btn = dropdown.querySelector('.menu-btn');
+      const content = dropdown.querySelector('.menu-content');
+      if (!btn || !content) return;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpen = !content.classList.contains('hidden');
+        document.querySelectorAll('#topMenuBar .menu-content').forEach(c => c.classList.add('hidden'));
+        if (!wasOpen) content.classList.remove('hidden');
+      });
+      dropdown.addEventListener('mouseenter', () => {
+        const anyOpen = Array.from(document.querySelectorAll('#topMenuBar .menu-content')).some(c => !c.classList.contains('hidden'));
+        if (anyOpen) {
+          document.querySelectorAll('#topMenuBar .menu-content').forEach(c => c.classList.add('hidden'));
+          content.classList.remove('hidden');
+        }
+      });
+    });
+
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('#topMenuBar .menu-dropdown')) {
+        document.querySelectorAll('#topMenuBar .menu-content').forEach(c => c.classList.add('hidden'));
+      }
     });
 
     // 11. Property Inspector Two-Way Sync
@@ -1978,6 +3111,25 @@
       const sVal = document.getElementById('strokeWidthVal');
       if (sWidth) sWidth.value = active.strokeWidth || 0;
       if (sVal) sVal.innerText = active.strokeWidth || 0;
+
+      // Studio Highlight Glow Inspector Sync
+      const chkGlow = document.getElementById('chkHighlightGlow');
+      const secGlow = document.getElementById('sectionGlowControls');
+      const pGlowCol = document.getElementById('propGlowColor');
+      const pGlowBlur = document.getElementById('propGlowBlur');
+      const pGlowVal = document.getElementById('glowBlurVal');
+      if (chkGlow && secGlow) {
+        const hasGlow = !!(active && active.shadow);
+        chkGlow.checked = hasGlow;
+        secGlow.classList.toggle('hidden', !hasGlow);
+        if (hasGlow && typeof active.shadow === 'object') {
+          if (pGlowCol && active.shadow.color) pGlowCol.value = ensureHex(active.shadow.color);
+          if (pGlowBlur && active.shadow.blur !== undefined) {
+            pGlowBlur.value = active.shadow.blur;
+            if (pGlowVal) pGlowVal.innerText = `${active.shadow.blur}px`;
+          }
+        }
+      }
     }
 
     // Vector Studio slider live numeric display
@@ -2266,6 +3418,249 @@
       if (active) { setStyleOnActive(active, 'strokeWidth', val); fCanvas.renderAll(); }
     });
     document.getElementById('propStrokeWidth')?.addEventListener('change', () => saveCanvasState());
+
+    // --- Studio Highlight Glow Engine ---------------------------------------
+    function applyStudioGlowToActive() {
+      const active = editableActive();
+      if (!active) return;
+      const isEnabled = document.getElementById('chkHighlightGlow')?.checked;
+      const secGlow = document.getElementById('sectionGlowControls');
+      if (secGlow) secGlow.classList.toggle('hidden', !isEnabled);
+
+      if (isEnabled) {
+        const color = document.getElementById('propGlowColor')?.value || '#38bdf8';
+        const blur = parseInt(document.getElementById('propGlowBlur')?.value, 10) || 20;
+        const shadow = new fabric.Shadow({
+          color: color,
+          blur: blur,
+          offsetX: 0,
+          offsetY: 0
+        });
+        setStyleOnActive(active, 'shadow', shadow);
+      } else {
+        setStyleOnActive(active, 'shadow', null);
+      }
+      fCanvas.requestRenderAll();
+      saveCanvasState();
+    }
+
+    document.getElementById('chkHighlightGlow')?.addEventListener('change', () => {
+      applyStudioGlowToActive();
+      const isEnabled = document.getElementById('chkHighlightGlow').checked;
+      document.getElementById('statusText').innerText = isEnabled ? "Studio Highlight Glow enabled." : "Studio Glow removed.";
+    });
+
+    document.getElementById('propGlowColor')?.addEventListener('input', () => {
+      if (document.getElementById('chkHighlightGlow')?.checked) applyStudioGlowToActive();
+    });
+
+    document.getElementById('propGlowBlur')?.addEventListener('input', (e) => {
+      const valLabel = document.getElementById('glowBlurVal');
+      if (valLabel) valLabel.innerText = `${e.target.value}px`;
+      if (document.getElementById('chkHighlightGlow')?.checked) applyStudioGlowToActive();
+    });
+
+    // --- Behr / Home Depot Color Visualizer Engine --------------------------
+    const BEHR_PALETTES = {
+      modern_neutrals: [
+        { name: 'Swiss Coffee', hex: '#F1EFEA' },
+        { name: 'Blank Canvas', hex: '#F6F4EB' },
+        { name: 'Cracked Pepper', hex: '#3E4042' },
+        { name: 'Whisper White', hex: '#F2F1ED' },
+        { name: 'Breezeway', hex: '#D2DBD4' },
+        { name: 'Silver Drop', hex: '#D5D5CE' }
+      ],
+      coastal_breeze: [
+        { name: 'Adirondack Blue', hex: '#6B8E9B' },
+        { name: 'Deep Breath', hex: '#3A5666' },
+        { name: 'Ultra Pure White', hex: '#FFFFFF' },
+        { name: 'Sand Dance', hex: '#C7B99D' },
+        { name: 'Coastal Sunrise', hex: '#E4D8C8' },
+        { name: 'Ocean Boulevard', hex: '#4A7C89' }
+      ],
+      warm_terracotta: [
+        { name: 'Terra Cotta Urn', hex: '#C36F52' },
+        { name: 'Canyon Dusk', hex: '#9C6A5A' },
+        { name: 'Spanish Sand', hex: '#DECDBB' },
+        { name: 'Roasted Corn', hex: '#E8A752' },
+        { name: 'Spiced Mustard', hex: '#B58742' },
+        { name: 'Autumn Red', hex: '#933E31' }
+      ],
+      midcentury_slate: [
+        { name: 'Battleship Gray', hex: '#8A9096' },
+        { name: 'Blueprint', hex: '#416788' },
+        { name: 'Orange Flambé', hex: '#DE532C' },
+        { name: 'Graphic Charcoal', hex: '#3A3B3C' },
+        { name: 'Celery', hex: '#C6CBB3' },
+        { name: 'Goldenrod', hex: '#DB9E36' }
+      ],
+      nordic_forest: [
+        { name: 'Jojoba', hex: '#89937E' },
+        { name: 'Nature\'s Gift', hex: '#99A293' },
+        { name: 'Dark Evergreen', hex: '#2E4437' },
+        { name: 'Natural Almond', hex: '#E7DFC9' },
+        { name: 'Mineral', hex: '#697A7C' },
+        { name: 'Spruce Mist', hex: '#586E65' }
+      ],
+      cyber_neon: [
+        { name: 'Cyber Yellow', hex: '#FDE047' },
+        { name: 'Electric Cyan', hex: '#06B6D4' },
+        { name: 'Neon Amber', hex: '#F59E0B' },
+        { name: 'Hot Fuchsia', hex: '#EC4899' },
+        { name: 'Electric Violet', hex: '#8B5CF6' },
+        { name: 'Matrix Emerald', hex: '#10B981' }
+      ]
+    };
+
+    let currentBehrPaletteKey = 'modern_neutrals';
+    let currentBehrHueShift = 0;
+    let currentBehrCycleIndex = 0;
+
+    function hexToHsl(hex) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      const r = parseInt(c.substr(0, 2), 16) / 255;
+      const g = parseInt(c.substr(2, 2), 16) / 255;
+      const b = parseInt(c.substr(4, 2), 16) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return [h * 360, s, l];
+    }
+
+    function hslToHex(h, s, l) {
+      h = ((h % 360) + 360) % 360;
+      let r, g, b;
+      if (s === 0) {
+        r = g = b = l;
+      } else {
+        const hue2rgb = (p, q, t) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, (h / 360) + 1/3);
+        g = hue2rgb(p, q, h / 360);
+        b = hue2rgb(p, q, (h / 360) - 1/3);
+      }
+      const toHex = x => {
+        const hex = Math.round(x * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+    }
+
+    function rotateHexHue(hex, deg) {
+      if (deg === 0) return hex;
+      const [h, s, l] = hexToHsl(hex);
+      return hslToHex(h + deg, s, l);
+    }
+
+    function renderBehrSwatches() {
+      const container = document.getElementById('behrSwatchStrip');
+      if (!container) return;
+      container.innerHTML = '';
+      const palette = BEHR_PALETTES[currentBehrPaletteKey] || BEHR_PALETTES.modern_neutrals;
+
+      palette.forEach((item, idx) => {
+        const shiftedHex = rotateHexHue(item.hex, currentBehrHueShift);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-6 h-6 rounded-md border border-slate-700 hover:scale-110 transition shadow-sm relative shrink-0';
+        btn.style.backgroundColor = shiftedHex;
+        btn.title = `${item.name} (${shiftedHex})`;
+        if (idx === currentBehrCycleIndex) {
+          btn.classList.add('ring-2', 'ring-amber-400', 'border-white');
+        }
+        btn.addEventListener('click', () => {
+          currentBehrCycleIndex = idx;
+          applyBehrColorToActive(shiftedHex, item.name);
+          renderBehrSwatches();
+        });
+        container.appendChild(btn);
+      });
+    }
+    window.renderBehrSwatches = renderBehrSwatches;
+
+    function applyBehrColorToActive(colorHex, colorName) {
+      const fCol = document.getElementById('propFillColor');
+      const fHex = document.getElementById('propFillHex');
+      if (fCol) fCol.value = colorHex;
+      if (fHex) fHex.value = colorHex.toUpperCase();
+
+      const active = editableActive();
+      if (active) {
+        setStyleOnActive(active, 'fill', colorHex);
+        fCanvas.requestRenderAll();
+        saveCanvasState();
+        document.getElementById('statusText').innerText = `Applied Behr paint: ${colorName || colorHex} (${colorHex})`;
+      } else {
+        document.getElementById('statusText').innerText = `Active paint color: ${colorName || colorHex} (${colorHex}) - click with Paint Bucket (K)`;
+      }
+    }
+
+    function cycleBehrPalette() {
+      const palette = BEHR_PALETTES[currentBehrPaletteKey] || BEHR_PALETTES.modern_neutrals;
+      currentBehrCycleIndex = (currentBehrCycleIndex + 1) % palette.length;
+      const item = palette[currentBehrCycleIndex];
+      const shiftedHex = rotateHexHue(item.hex, currentBehrHueShift);
+      applyBehrColorToActive(shiftedHex, item.name);
+      renderBehrSwatches();
+    }
+    window.cycleBehrPalette = cycleBehrPalette;
+
+    function activateColorVisualizer() {
+      switchTab('canvas');
+      const el = document.getElementById('panelBehrVisualizer');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      cycleBehrPalette();
+    }
+    window.activateColorVisualizer = activateColorVisualizer;
+
+    document.getElementById('sliderBehrHue')?.addEventListener('input', (e) => {
+      currentBehrHueShift = parseInt(e.target.value, 10) || 0;
+      const valLabel = document.getElementById('valBehrHue');
+      if (valLabel) valLabel.innerText = `${currentBehrHueShift}°`;
+      renderBehrSwatches();
+
+      const active = editableActive();
+      if (active && active.fill && typeof active.fill === 'string') {
+        const palette = BEHR_PALETTES[currentBehrPaletteKey] || BEHR_PALETTES.modern_neutrals;
+        const item = palette[currentBehrCycleIndex] || palette[0];
+        const shifted = rotateHexHue(item.hex, currentBehrHueShift);
+        setStyleOnActive(active, 'fill', shifted);
+        fCanvas.requestRenderAll();
+      }
+    });
+
+    document.getElementById('sliderBehrHue')?.addEventListener('change', () => {
+      saveCanvasState();
+    });
+
+    document.getElementById('selBehrPalette')?.addEventListener('change', (e) => {
+      currentBehrPaletteKey = e.target.value;
+      currentBehrCycleIndex = 0;
+      renderBehrSwatches();
+    });
+
+    document.getElementById('btnCycleBehrColor')?.addEventListener('click', cycleBehrPalette);
+    renderBehrSwatches();
 
     // Z-Ordering (buttons + Ctrl+] / Ctrl+[ / Ctrl+Shift+] / Ctrl+Shift+[)
     document.getElementById('btnBringForward').addEventListener('click', () => orderActive('forward'));
@@ -3309,30 +4704,65 @@
       }
     }
 
+    function addBrandSwatch(hex) {
+      if (!hex) return;
+      const cleanHex = hex.toUpperCase();
+      if (!Array.isArray(currentBrandPalette)) {
+        currentBrandPalette = [];
+      }
+      if (!currentBrandPalette.includes(cleanHex)) {
+        currentBrandPalette.push(cleanHex);
+      }
+      selectedSliceColor = cleanHex;
+      renderBrandSwatches();
+    }
+    window.addBrandSwatch = addBrandSwatch;
+
     function applySampledColor(hex) {
+      if (!hex) return;
+      const cleanHex = hex.toUpperCase();
       const active = editableActive();
-      if (!active) return;
-      setStyleOnActive(active, 'fill', hex);
-      document.getElementById('propFillColor').value = hex.toLowerCase();
-      document.getElementById('propFillHex').value = hex.toUpperCase();
+      if (active) {
+        setStyleOnActive(active, 'fill', cleanHex);
+        if (active.type === 'i-text' || active.type === 'text') {
+          const tCol = document.getElementById('propTextFillColor');
+          const tHex = document.getElementById('propTextFillHex');
+          if (tCol) tCol.value = cleanHex.toLowerCase();
+          if (tHex) tHex.value = cleanHex;
+        }
+      }
+      const propCol = document.getElementById('propFillColor');
+      const propHex = document.getElementById('propFillHex');
+      if (propCol) propCol.value = cleanHex.toLowerCase();
+      if (propHex) propHex.value = cleanHex;
+
+      // Push hex to Brand Swatches strip
+      addBrandSwatch(cleanHex);
+
       fCanvas.requestRenderAll();
       saveCanvasState();
       updateLayersUI();
-      document.getElementById('statusText').innerText = `Fill set to ${hex.toUpperCase()}`;
+      document.getElementById('statusText').innerText = active
+        ? `Applied ${cleanHex} to active object & added to Brand Swatches!`
+        : `Sampled ${cleanHex} into Brand Swatches!`;
     }
 
     async function activateEyedropper() {
       if (eyedropperFallbackActive) { setEyedropperFallback(false); return; }
       const active = fCanvas.getActiveObject();
-      if (!active) { document.getElementById('statusText').innerText = "Select an object first, then use the Eyedropper (I)."; return; }
-      if (active.locked) { document.getElementById('statusText').innerText = "Layer is locked - unlock it to change its fill."; return; }
+      if (active && active.locked) {
+        document.getElementById('statusText').innerText = "Layer is locked - unlock it to change its fill.";
+        return;
+      }
 
       if (window.EyeDropper) {
         setEyedropperUI(true);
-        document.getElementById('statusText').innerText = "Eyedropper: click any pixel (Esc cancels)";
+        document.getElementById('statusText').innerText = "Eyedropper: click any pixel on screen (Esc cancels)";
         try {
           const res = await new window.EyeDropper().open();
-          applySampledColor(res.sRGBHex);
+          if (res && res.sRGBHex) {
+            applySampledColor(res.sRGBHex);
+          }
         } catch (err) { /* user cancelled */ }
         setEyedropperUI(false);
       } else {
@@ -3340,7 +4770,7 @@
       }
     }
 
-    document.querySelectorAll('.btn-eyedropper').forEach(b => b.addEventListener('click', activateEyedropper));
+    document.querySelectorAll('.btn-eyedropper, #btnEyedropper').forEach(b => b.addEventListener('click', activateEyedropper));
 
     // ===================================================================
     // 19. Selection Tools: Select / Lasso / Pan, grouping state, shortcuts
@@ -3349,12 +4779,13 @@
     //   Ctrl+A select all      Ctrl+G group      Ctrl+Shift+G ungroup
     //   Ctrl+] forward   Ctrl+[ backward   Ctrl+Shift+] front   Ctrl+Shift+[ back
     const LASSO_COLOR = '#06b6d4';
-    const TOOL_BUTTONS = { select: 'btnToolSelect', lasso: 'btnToolLasso', eraser: 'btnToolEraser', pan: 'btnToolPan' };
+    const TOOL_BUTTONS = { select: 'btnToolSelect', lasso: 'btnToolLasso', eraser: 'btnToolEraser', pan: 'btnToolPan', bucket: 'btnToolBucket' };
     const TOOL_LABELS = {
       select: 'Pointer (V): click, Shift+click to toggle, or drag a marquee box.',
       lasso: 'Lasso (L): drag a freehand loop around objects, release to select them (Esc cancels).',
       eraser: 'Eraser (E): hover over paths to preview red target, click to erase (even inside groups).',
-      pan: 'Pan (H): drag to move the viewport.'
+      pan: 'Pan (H): drag to move the viewport.',
+      bucket: 'Paint Bucket (K): click any shape, text, or vector path to flood fill with current paint.'
     };
 
     // --- Selection helpers ---------------------------------------------
@@ -3502,10 +4933,23 @@
       currentTool = tool;
       refreshPanMode();                             // enter / leave the persistent Pan tool
 
+      if (typeof extractMode !== 'undefined' && extractMode) {
+        exitExtractMode(true);
+      }
+
       // Pointer tools and the freehand brush are mutually exclusive
       if (!opts.keepDrawing && fCanvas.isDrawingMode) {
         fCanvas.isDrawingMode = false;
-        document.getElementById('btnToggleDraw').classList.remove('bg-amber-500/20');
+        const btn = document.getElementById('btnToggleDraw');
+        if (btn) {
+          btn.classList.remove('text-amber-400', 'bg-amber-500/20');
+          btn.classList.add('text-slate-300');
+          const icon = btn.querySelector('svg, i');
+          if (icon) {
+            icon.classList.remove('text-amber-400');
+            icon.classList.add('text-indigo-400');
+          }
+        }
       }
 
       if (tool === 'lasso') {
@@ -3514,6 +4958,13 @@
       } else if (tool === 'eraser') {
         fCanvas.selection = false;                  // no marquee while erasing
         fCanvas.discardActiveObject();
+        fCanvas.getObjects().forEach(o => {
+          if (o.type === 'group') o.subTargetCheck = true;
+        });
+        fCanvas.requestRenderAll();
+        applyToolCursors('crosshair', 'crosshair', 'crosshair', false);
+      } else if (tool === 'bucket') {
+        fCanvas.selection = false;
         fCanvas.getObjects().forEach(o => {
           if (o.type === 'group') o.subTargetCheck = true;
         });
@@ -3636,6 +5087,17 @@
     });
 
     fCanvas.on('mouse:move', (opt) => {
+      if (typeof extractMode !== 'undefined' && extractMode) {
+        if (!extractIsDragging || !extractStartPointer || !extractCropRect) return;
+        const ptr = fCanvas.getPointer(opt.e);
+        const l = Math.min(extractStartPointer.x, ptr.x);
+        const t = Math.min(extractStartPointer.y, ptr.y);
+        const w = Math.abs(ptr.x - extractStartPointer.x);
+        const h = Math.abs(ptr.y - extractStartPointer.y);
+        extractCropRect.set({ left: l, top: t, width: w, height: h });
+        fCanvas.requestRenderAll();
+        return;
+      }
       if (currentTool !== 'eraser' || spacePanActive) return;
 
       const { subTarget, parentGroup } = findEraserTarget(opt);
@@ -3685,6 +5147,66 @@
     });
 
     fCanvas.on('mouse:down', (opt) => {
+      if (typeof extractMode !== 'undefined' && extractMode) {
+        if (opt.e && opt.e.button !== 0) return;
+        if (opt.e) {
+          opt.e.preventDefault();
+          opt.e.stopPropagation();
+        }
+        const ptr = fCanvas.getPointer(opt.e);
+        extractIsDragging = true;
+        extractStartPointer = ptr;
+        if (extractCropRect) {
+          fCanvas.remove(extractCropRect);
+          extractCropRect = null;
+        }
+        extractCropRect = new fabric.Rect({
+          left: ptr.x,
+          top: ptr.y,
+          width: 0,
+          height: 0,
+          fill: 'rgba(236, 72, 153, 0.15)',
+          stroke: '#ec4899',
+          strokeWidth: 2,
+          strokeDashArray: [6, 4],
+          selectable: false,
+          evented: false
+        });
+        fCanvas.add(extractCropRect);
+        fCanvas.requestRenderAll();
+        return;
+      }
+      if (currentTool === 'bucket') {
+        if (opt.e && opt.e.button !== 0) return;
+        if (spacePanActive) return;
+        if (opt.e) {
+          opt.e.preventDefault();
+          opt.e.stopPropagation();
+        }
+
+        const res = findEraserTarget(opt);
+        const toFill = res.subTarget || opt.target;
+        const parentGroup = res.parentGroup;
+
+        if (toFill && !toFill.locked && (!parentGroup || !parentGroup.locked)) {
+          const fillColor = document.getElementById('propFillColor')?.value || '#F59E0B';
+          if (toFill.type === 'image') {
+            document.getElementById('statusText').innerText = 'Paint bucket works on vector paths, shapes & text (vectorize image in Vector Studio).';
+            return;
+          }
+          toFill.set('fill', fillColor);
+          toFill.dirty = true;
+          if (parentGroup) parentGroup.dirty = true;
+          fCanvas.setActiveObject(toFill);
+          fCanvas.requestRenderAll();
+          saveCanvasState();
+          syncInspector();
+          updateLayersUI();
+          document.getElementById('statusText').innerText = `Bucket filled "${toFill.name || toFill.type}" with ${fillColor}!`;
+        }
+        return;
+      }
+
       if (currentTool !== 'eraser' || (opt.e && opt.e.button !== 0) || spacePanActive) return;
       if (opt.e) {
         opt.e.preventDefault();
@@ -3726,6 +5248,30 @@
         saveCanvasState();
         updateLayersUI();
         document.getElementById('statusText').innerText = `Erased "${targetName}"!`;
+      }
+    });
+
+    fCanvas.on('mouse:up', async (opt) => {
+      if (typeof extractMode !== 'undefined' && extractMode && extractIsDragging) {
+        extractIsDragging = false;
+        if (!extractCropRect || !extractTargetImage) {
+          exitExtractMode();
+          return;
+        }
+        const cropBox = {
+          left: extractCropRect.left,
+          top: extractCropRect.top,
+          width: extractCropRect.width,
+          height: extractCropRect.height
+        };
+        if (cropBox.width < 5 || cropBox.height < 5) {
+          document.getElementById('statusText').innerText = "Drag box too small. Drag a larger marquee box over the image.";
+          fCanvas.remove(extractCropRect);
+          extractCropRect = null;
+          fCanvas.requestRenderAll();
+          return;
+        }
+        await processRegionExtraction(cropBox, extractTargetImage);
       }
     });
 
@@ -3834,6 +5380,7 @@
       if (lasso.active && e.button === 0) finishLasso();
     });
     window.addEventListener('blur', () => {
+      if (typeof extractMode !== 'undefined' && extractMode) exitExtractMode(true);
       cancelLasso();
       if (typeof clearEraserHover === 'function') clearEraserHover();
     });
@@ -3863,6 +5410,7 @@
       if (mod || e.altKey) return false;
 
       if (key === 'escape') {
+        if (typeof extractMode !== 'undefined' && extractMode) { exitExtractMode(); return true; }
         if (lasso.active) { cancelLasso(); return true; }
         if (currentTool !== 'select') { setTool('select'); return true; }
         return false;                                 // fall through: Esc deselects
@@ -3871,7 +5419,18 @@
       if (key === 'l') { e.preventDefault(); setTool('lasso'); return true; }
       if (key === 'e') { e.preventDefault(); setTool('eraser'); return true; }
       if (key === 'h') { e.preventDefault(); setTool('pan'); return true; }
+      if (key === 'k') { e.preventDefault(); setTool('bucket'); return true; }
+      if (key === 'c' && !mod) { e.preventDefault(); cycleBehrPalette(); return true; }
       if (key === 't') { e.preventDefault(); document.getElementById('btnToolText')?.click(); return true; }
+      if (key === 'b') { e.preventDefault(); toggleDrawBrush(); return true; }
+      if (key === 'x') { e.preventDefault(); triggerExtractRegion(); return true; }
+      if (key === '1') { e.preventDefault(); switchTab('deconstruct'); return true; }
+      if (key === '2') { e.preventDefault(); switchTab('canvas'); return true; }
+      if (key === '3') { e.preventDefault(); switchTab('lowerthird'); return true; }
+      if (key === '0') { e.preventDefault(); document.getElementById('btnZoomReset')?.click(); return true; }
+      if (key === 'f') { e.preventDefault(); document.getElementById('btnFitScreen')?.click(); return true; }
+      if (key === '?' || e.key === 'F1') { e.preventDefault(); openHelpModal('workflow'); return true; }
+      if (key === '/') { e.preventDefault(); openShortcutsModal(); return true; }
       return false;
     }
 
